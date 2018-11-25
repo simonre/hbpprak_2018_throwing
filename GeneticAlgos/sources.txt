@@ -1,0 +1,3 @@
+https://pablormier.github.io/2017/09/05/a-tutorial-on-differential-evolution-with-python/
+https://blog.sicara.com/getting-started-genetic-algorithms-python-tutorial-81ffa1dd72f9
+http://outlace.com/miniga.html

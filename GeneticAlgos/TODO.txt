@@ -1,0 +1,29 @@
+
+Steps:
+1. New generation
+2. Evaluation
+3. Selection
+4. Reproduction (Crossover)
+5. Mutation
+
+
+Selection
+https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)
+- Stochastic uniform
+- Remainder
+- Uniform 
+- Roulette 
+- Tournament
+
+
+Crossover
+https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)
+
+- Single Point
+- Two-point / k-point
+- uniform
+
+Mutation
+https://en.wikipedia.org/wiki/Mutation_(genetic_algorithm)
+
+Other option: larga variance in the beginning, reduce in further steps
