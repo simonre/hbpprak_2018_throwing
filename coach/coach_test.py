@@ -77,7 +77,7 @@ try:
     # load new transfer function from file
     move_arm_tf = None
     with open(TF_FILE, 'r') as tf_file:
-	move_arm_tf = tf_file.read()
+        move_arm_tf = tf_file.read()
     
     # add new transfer function to platform
     sim.edit_transfer_function(TF, move_arm_tf)
