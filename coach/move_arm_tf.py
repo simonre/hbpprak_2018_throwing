@@ -15,11 +15,4 @@ def move_arm(t,
                      arm_6):
 
     import numpy as np
-
-    arm_1.send_message(std_msgs.msg.Float64(-0.6))
-    arm_2.send_message(std_msgs.msg.Float64(np.sin(t)))
-    arm_3.send_message(std_msgs.msg.Float64(-np.sin(t)))
-    arm_4.send_message(std_msgs.msg.Float64(0.5))
-    arm_5.send_message(std_msgs.msg.Float64(0.5))
-    arm_6.send_message(std_msgs.msg.Float64(0.5))
-
+[]

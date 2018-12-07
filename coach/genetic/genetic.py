@@ -14,8 +14,8 @@ class Genetic:
         self.pool_size = pool_size
         self.mating_pool_size = mating_pool_size
         self.mutation = mutation
-        self.generations = [self._generate_start_pool()]
-        self.fitness = [np.zeros(self.pool_size)]
+        self.generations = []
+        self.fitness = []
     
     def set_fitness(self, index, value):
         """ Set the fitness of a gene in the current generation. """
@@ -24,14 +24,16 @@ class Genetic:
     
     def next_gen(self):
         """ Generate the next generation and return it. """
+        if not self.generations:
+            gen = self._generate_start_pool()
+        else:
+            gen = self._generate_next_gen()
         
-        gen = self._generate_next_gen()
         self.generations.append(gen)
         self.fitness.append(np.zeros(self.pool_size))
-        
         return self.generations[-1]
     
-    def get_fittest(self):
+    def fittest(self):
         if not self.generations:
             return None
         fit = self.fitness[-1]
