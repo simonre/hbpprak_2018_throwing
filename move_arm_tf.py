@@ -14,5 +14,4 @@ def move_arm(t,
                      arm_5,
                      arm_6):
 
-    import numpy as np
-[]
+    pass
