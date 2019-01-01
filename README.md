@@ -1,5 +1,29 @@
 # FZI Human Brain Project Praktikum 2018
 
+## TODO
+1. OpenCV ausprobieren
+2. Einzelne Mutationsraten für jedes Gelenk?
+3. ZUstandsautomat bauen
+
+## Steps to take
+
+### 1: Stossen evolutionär
+Evolutionärer Ansatz um einzige Stossbewegung zu kodieren und evolutionär zu verbessern.
+
+### 2: Greifen + Werfen
+Aufteilung in 2 Phasen:
+1. Greifen (hardcoded)
+1. Werfen (genetisch) -> in die "falsche" Richtung (negativ y)
+
+### 3: Greifen, Ausholen + Werfen
+Aufteilung in 3 Phasen:
+1. Greifen (hardcoded)
+2. Ausholen (hardcoded) 
+3. Werfen (genetisch) -> in die "richtige" Richtung (positiv y)
+
+### 4: SNN / RNN / LSTM / ... ?
+
+
 ## Installation
 
 Simply clone this repo into your ~/.opt/nrpStorage folder.
