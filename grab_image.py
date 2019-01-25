@@ -32,5 +32,3 @@ def grab_image(t, camera, visualizer):
         cv2.circle(vis_img, (cX, cY), 5, 255, -1)
         msg_frame = CvBridge().cv2_to_imgmsg(vis_img, 'mono8')
         visualizer.send_message(msg_frame)
-        clientLogger.info("X= " + str(cX))
-        clientLogger.info("Y= " + str(cY))
