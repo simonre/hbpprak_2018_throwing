@@ -19,8 +19,7 @@ ENV = 'local'
 USER = 'nrpuser'
 EXPERIMENT = 'hbpprak_2018_throwing'
 OLD_TF = 'simple_move_robot'
-TF_NAME = 'move_arm_tf'
-TF_FILE = TF_NAME+'.py'
+TF_FILE = 'move_arm_tf.py'
 GENS = 1
 move_joint_text = "arm_{}.send_message(std_msgs.msg.Float64({}))" 
 last_status = None
@@ -38,7 +37,6 @@ def run_for_t_seconds(t):
     start = time.time()
     while time.time() < start + t:
         time.sleep(0.25)
-    return
 
 csv_name = "obj_position.csv"
 def calculate_fitness(obj_csv):
@@ -56,26 +54,18 @@ def calculate_fitness(obj_csv):
     print("FITNESS: " + str(distance))
     return distance
 
-def save_position_csv(sim, datadir): 
-    with open(os.path.join(datadir, csv_name), 'wb') as f: 
-            cf = csv.writer(f) 
-            ################################################# ,
-            # Insert code here: ,
-            # get the CSV data from the simulation ,
-            ################################################# ,
-            csv_data = sim.get_csv_data(csv_name) #solution ,
-            cf.writerows(csv_data) 
-# The function make_on_status() returns a on_status() function ,
-# This is called a "closure":  ,
-# it is here used to pass the sim and datadir objects to on_status() ,
-def make_on_status(sim, datadir): 
-    def on_status(msg): 
-        if sim.get_state() == 'paused': 
-            print("Current simulation time: {}".format(msg['simulationTime'])) 
+def save_position_csv(sim, datadir):
+    with open(os.path.join(datadir, csv_name), 'wb') as f:
+            cf = csv.writer(f)
+            csv_data = sim.get_csv_data(csv_name)
+            cf.writerows(csv_data)
 
-            save_position_csv(sim, datadir) 
-
-            print("Saved position in CSV file") 
+def make_on_status(sim, datadir):
+    def on_status(msg):
+        if sim.get_state() == 'paused':
+            print("Current simulation time: {}".format(msg['simulationTime']))
+            save_position_csv(sim, datadir)
+            print("Saved position in CSV file")
 
             global last_status
             last_status = msg
@@ -94,18 +84,14 @@ def make_transfer_function_from_gen(gen):
         tf_text += "    "
         tf_text += move_joint_text.format(joint + 1, force)
         tf_text += "\n"
+        print("TF: {} -> {}".format(joint + 1, force))
 
     move_arm_tf = None
     with open(TF_FILE, 'r') as tf_file:
         move_arm_tf = tf_file.read()
     move_arm_tf += "\n" + tf_text
-    print(move_arm_tf)
+    #print(move_arm_tf)
     return move_arm_tf
-
-
-move_arm_tf = None
-with open(TF_FILE, 'r') as tf_file:
-    move_arm_tf = tf_file.read()
 
 
 print("Starting simulation...")
@@ -116,11 +102,7 @@ sim.delete_transfer_function(OLD_TF)
 print("Creating genetic helper object...")
 start_movement = np.array([1,1,1,1,1,1])
 gen = Genetic(start_movement, pool_size=10, mutation=0.1, mating_pool_size=4)
-    
-weight_costs = []
-trial_weights = np.linspace(0., 1.5, 10)
 
-tf_name = "move_arm"
 try:
     for gen_index in range(GENS):
         # get next generation of movements
@@ -128,13 +110,12 @@ try:
         
         for move_index in range(next_gen.shape[0]):
             move_arm_tf = make_transfer_function_from_gen(next_gen)
-            print(move_arm_tf)
-            print("\n")
+            print(move_arm_tf, '\n')
             sim.print_transfer_functions()
                 
             # add transfer function code to platform
             #sim.add_transfer_function(record_obj_tf)
-            sim.edit_transfer_function(tf_name, move_arm_tf)
+            sim.edit_transfer_function("move_arm", move_arm_tf)
             datadir = tempfile.mkdtemp()
             sim.register_status_callback(make_on_status(sim, datadir))
             print("\nGeneration {}/{} Movement {}/{}".format(gen_index+1,GENS,move_index+1,next_gen.shape[0]))

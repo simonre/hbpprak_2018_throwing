@@ -4,7 +4,7 @@ from smach.state import State
 
 from gazebo_msgs.srv import ApplyBodyWrench, GetModelState, DeleteModel, SpawnEntity, SpawnEntityRequest
 from geometry_msgs.msg import Wrench, Vector3, Point
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, String
 import rospy
 from rospy import ServiceProxy, wait_for_service
 from hbp_nrp_excontrol.logs import clientLogger
@@ -79,10 +79,10 @@ cylinder_sdf_xml = """
   </model>
 </sdf>
 """
-
-class NewCylinderState(State):
-    def __init__(self, cylinder_name, sdf_xml, outcomes=['success', 'aborted']):
-        super(NewCylinderState, self).__init__(outcomes=outcomes)
+    
+class ResetState(State):
+    def __init__(self, cylinder_name, sdf_xml, rate=1., outcomes=['success', 'aborted'], max_duration=2):
+        super(ResetState, self).__init__(outcomes=outcomes)
         self._cylinder_name = cylinder_name
         self._spawn_proxy = rospy.ServiceProxy('/gazebo/spawn_sdf_entity',
                                                SpawnEntity, persistent=True)
@@ -93,14 +93,41 @@ class NewCylinderState(State):
         self._cylinder_msg.initial_pose.position.y = -0.25321
         self._cylinder_msg.initial_pose.position.z = 1.12015
         self._cylinder_msg.reference_frame = "world"
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
+        self.max_duration=max_duration
+        self._rate = rospy.Rate(rate)
 
     def execute(self, userdata):
         self._spawn_proxy(self._cylinder_msg)
+        start_time = rospy.Time.now()
+        clientLogger.info("Sending RESET")
+        self._robot_topic.publish(String("RESET"))
+        while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
+            self._rate.sleep()
+        clientLogger.info("Changing to preparation state")
+        return 'success'
+      
+        
+class PrepareState(State):
+    def __init__(self, rate=1., outcomes=['success', 'aborted'], max_duration=2):
+        super(PrepareState, self).__init__(outcomes=outcomes)
+        self._rate = rospy.Rate(rate)
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
+        self.max_duration=max_duration
+
+    def execute(self, userdata):
+        start_time = rospy.Time.now()
+        clientLogger.info("Sending PREPARE")
+        self._robot_topic.publish(String("PREPARE"))
+        while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
+            self._rate.sleep()
+        clientLogger.info("Changing to hit state")
         return 'success'
 
-class FlyingCylinderState(State):
-    def __init__(self, cylinder_name, rate=1., outcomes=['success', 'aborted'], max_hit_duration=10):
-        super(FlyingCylinderState, self).__init__(outcomes=outcomes)
+
+class HitState(State):
+    def __init__(self, cylinder_name, rate=1., outcomes=['success', 'aborted'], max_hit_duration=5):
+        super(HitState, self).__init__(outcomes=outcomes)
         self._rate = rospy.Rate(rate)
         self._cylinder_name = cylinder_name
         self._state_proxy = ServiceProxy('/gazebo/get_model_state',
@@ -108,11 +135,16 @@ class FlyingCylinderState(State):
         self._delete_proxy = ServiceProxy('/gazebo/delete_model',
                                          DeleteModel, persistent=True)
         self._distance_topic = rospy.Publisher('/cylinder_distance', Float32, queue_size=10)
-        self.max_hit_duration=10
+        self.max_hit_duration=max_hit_duration
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
 
     def execute(self, userdata):
         start_time = rospy.Time.now()
-        while not self.cylinder_lower_than(0.2) and (rospy.Time.now() - start_time) < rospy.Duration(self.max_hit_duration):
+        clientLogger.info("Sending HIT")
+        self._robot_topic.publish(String("HIT"))
+        while not self.cylinder_lower_than(0.2):
+            if (rospy.Time.now() - start_time) >= rospy.Duration(self.max_hit_duration):
+                break
             self._rate.sleep()
         cylinder_pos = self.get_cylinder_distance()
         clientLogger.advertise("Cylinder distance: {}".format(cylinder_pos))
@@ -135,18 +167,24 @@ class FlyingCylinderState(State):
             clientLogger.info(str(exc))
             return False
         return current_cylinder_state.pose.position.z < z_threshold
-
-
+    
+    
 with sm:
     StateMachine.add(
-      "new_cylinder",
-      NewCylinderState(cylinder_name, cylinder_sdf_xml),
-      transitions = {"success": "flying_cylinder",
+      "reset_cylinder",
+      ResetState(cylinder_name, cylinder_sdf_xml),
+      transitions = {"success": "prepare",
                      "aborted": ERROR}
     )
     StateMachine.add(
-     "flying_cylinder",
-     FlyingCylinderState(cylinder_name),
-     transitions = {"success": "new_cylinder",
-                    "aborted": ERROR}
+      "prepare",
+      PrepareState(),
+      transitions = {"success": "hit_cylinder",
+                     "aborted": ERROR}
+    )
+    StateMachine.add(
+      "hit_cylinder",
+      HitState(cylinder_name),
+      transitions = {"success": "reset_cylinder",
+                     "aborted": ERROR}
     )

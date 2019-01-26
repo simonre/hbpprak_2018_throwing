@@ -16,7 +16,7 @@
 @nrp.MapRobotPublisher("hand_thumb_flexion", Topic('/robot/hand_j4/cmd_pos', std_msgs.msg.Float64))
 @nrp.MapRobotPublisher("hand_thumb_distal", Topic('/robot/hand_j3/cmd_pos', std_msgs.msg.Float64))
 @nrp.Neuron2Robot()
-def simple_move_robot(t,
+def move_arm (t,
                      hand_index_proximal,
                      hand_index_distal,
                      hand_middle_proximal,
@@ -48,17 +48,10 @@ def simple_move_robot(t,
                 hand_thumb_distal
         ]:
             topic.send_message(std_msgs.msg.Float64(strength))
-    """
-    arm_1.send_message(std_msgs.msg.Float64(-1.))
+
+    arm_1.send_message(std_msgs.msg.Float64(-0.45))
     arm_2.send_message(std_msgs.msg.Float64(-0.9))
-    arm_3.send_message(std_msgs.msg.Float64(1))
-    arm_4.send_message(std_msgs.msg.Float64(0))
-    arm_5.send_message(std_msgs.msg.Float64(-0.5))
-    arm_6.send_message(std_msgs.msg.Float64(0))"""
-    
-    arm_1.send_message(std_msgs.msg.Float64(1))
-    arm_2.send_message(std_msgs.msg.Float64(-1.5))
-    arm_3.send_message(std_msgs.msg.Float64(0))
+    arm_3.send_message(std_msgs.msg.Float64(0.9))
     arm_4.send_message(std_msgs.msg.Float64(0))
     arm_5.send_message(std_msgs.msg.Float64(0))
-    arm_6.send_message(std_msgs.msg.Float64(0))
+    arm_6.send_message(std_msgs.msg.Float64(-0.5))
