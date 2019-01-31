@@ -21,7 +21,7 @@ EXPERIMENT = 'hbpprak_2018_throwing'
 OLD_TF = 'simple_move_robot'
 TF_NAME = 'move_arm_tf'
 TF_FILE = TF_NAME+'.py'
-GENS = 8
+GENS = 4
 move_joint_text = "arm_{}.send_message(std_msgs.msg.Float64({}))" 
 last_status = None
 RUNNING = 0 
@@ -50,7 +50,20 @@ def calculate_fitness(pos_csv, dist_csv):
     #distance = math.sqrt(abs(sum_initial - sum_end))
     distance = 0
     try:
-        distance = dist_csv.iloc[0]['dist']
+        pos_initial = pos_csv.iloc[0]
+        pos_end = pos_csv.tail(1)
+        px_initial = pos_initial['px']
+        py_initial = pos_initial['py']
+        pz_initial = pos_initial['pz']
+        px_end = pos_end['px']
+        py_end = pos_end['py']
+        pz_end = pos_end['pz']
+        sum_initial = px_initial ** 2 + py_initial ** 2 + pz_initial ** 2
+        sum_end = px_end ** 2 + py_end ** 2 + pz_end ** 2
+        distance = math.sqrt(abs(sum_initial - sum_end))
+        distance_sim = dist_csv.iloc[0]['dist']
+        print("FITNESS = " + str(distance))
+        return abs(distance)*100
     except Exception as e:
         print("Simulation still running")
         return None
@@ -80,14 +93,17 @@ def calculate_fitness(pos_csv, dist_csv):
 
 
 def save_position_csv(sim, datadir): 
-    with open(os.path.join(datadir, pos_csv_name), 'wb') as f: 
-        cf = csv.writer(f) 
-        ################################################# ,
-        # Insert code here: ,
-        # get the CSV data from the simulation ,
-        ################################################# ,
-        csv_data = sim.get_csv_data(pos_csv_name) #solution ,
-        cf.writerows(csv_data) 
+    try:
+        with open(os.path.join(datadir, pos_csv_name), 'wb') as f: 
+            cf = csv.writer(f) 
+            ################################################# ,
+            # Insert code here: ,
+            # get the CSV data from the simulation ,
+            ################################################# ,
+            csv_data = sim.get_csv_data(pos_csv_name) #solution ,
+            cf.writerows(csv_data) 
+    except:
+        pass
 
 def save_distance_csv(sim, datadir): 
     with open(os.path.join(datadir, distance_distal_csv_name), 'wb') as f: 
@@ -122,8 +138,13 @@ def make_on_status(sim, datadir):
             time.sleep(1)
 
         if os.path.isfile(pos_csv_file):
-            pos_obj_csv = pd.read_csv(pos_csv_file) 
-            dis_obj_csv = pd.read_csv(dist_csv_file)  
+            pos_obj_csv = None
+            dis_obj_csv = None
+            try: 
+                pos_obj_csv = pd.read_csv(pos_csv_file) 
+                dis_obj_csv = pd.read_csv(dist_csv_file)  
+            except:
+                pass 
             fitness = calculate_fitness(pos_obj_csv, dis_obj_csv) 
             print(fitness)
             if None != fitness :

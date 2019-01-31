@@ -55,3 +55,4 @@ def move_arm (t,
     arm_4.send_message(std_msgs.msg.Float64(0))
     arm_5.send_message(std_msgs.msg.Float64(0))
     arm_6.send_message(std_msgs.msg.Float64(-0.5))
+

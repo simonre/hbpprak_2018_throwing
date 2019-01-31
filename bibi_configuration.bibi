@@ -8,6 +8,6 @@
   <transferFunction src="get_pos.py" xsi:type="PythonTransferFunction" />
   <transferFunction src="arm_control.py" xsi:type="PythonTransferFunction" />
   <transferFunction src="move_arm.py" xsi:type="PythonTransferFunction" />
-  <transferFunction src="simple_move_robot.py" xsi:type="PythonTransferFunction" />
   <transferFunction src="get_distance.py" xsi:type="PythonTransferFunction" />
+  <transferFunction src="simple_move_robot.py" xsi:type="PythonTransferFunction" />
 </bibi>
