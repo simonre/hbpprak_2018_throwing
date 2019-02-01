@@ -159,7 +159,10 @@ class HitState(State):
         except rospy.ServiceException as exc:
             clientLogger.error(str(exc))
             return -1000.0
-        return -current_cylinder_state.pose.position.y
+        x = -current_cylinder_state.pose.position.x
+        y = current_cylinder_state.pose.position.y
+        z = current_cylinder_state.pose.position.z
+        return x**2 + y**2 + z**2
 
     def cylinder_lower_than(self, z_threshold):
         try:

@@ -28,11 +28,11 @@ def arm_control(t,
     if command_str == last_command_executed.value: return
     topics_arm = [topic_arm_1, topic_arm_2, topic_arm_3, topic_arm_4, topic_arm_5, topic_arm_6]
 
-    commands_confs = {
-            "HIT": [-2, -1.5, 0, 0, 0, 0],
-            "PREPARE": [1, -1.5, 0, 0, 0, 0],
+    commands_confs = {{
+            "HIT": {},
+            "PREPARE": [-0.45, -0.9, 0.9, 0, 0, -0.5],
             "RESET": [0, 0, 0, 0, 0, 0]
-        }
+        }}
 
 
     # parse command

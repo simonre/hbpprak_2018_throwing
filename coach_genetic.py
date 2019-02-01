@@ -21,12 +21,15 @@ EXPERIMENT = 'hbpprak_2018_throwing'
 OLD_TF = 'simple_move_robot'
 TF_NAME = 'move_arm_tf'
 TF_FILE = TF_NAME+'.py'
-GENS = 4
+GENS = 5
 move_joint_text = "arm_{}.send_message(std_msgs.msg.Float64({}))" 
 last_status = None
 RUNNING = 0 
 STOPPED = 1
 sim_status = RUNNING
+
+max_fitness = 0
+best_move = [0,0,0,0,0]
 
 def run_for_t_seconds(t):
     start = time.time()
@@ -35,6 +38,7 @@ def run_for_t_seconds(t):
 
 pos_csv_name = "obj_position.csv"
 distance_distal_csv_name = "distance.csv"
+sim_state = "RESET"
 
 def calculate_fitness(pos_csv, dist_csv):
     #pos_initial = obj_csv.iloc[0]
@@ -63,26 +67,22 @@ def calculate_fitness(pos_csv, dist_csv):
         distance = math.sqrt(abs(sum_initial - sum_end))
         distance_sim = dist_csv.iloc[0]['dist']
         print("FITNESS = " + str(distance))
-        return abs(distance)*100
+        return abs(distance)
     except Exception as e:
-        print("Simulation still running")
         return None
 
-    distal = 0
+    # distal = 0
 
-    try: 
-        #pos_initial = obj_csv.iloc[0]
-        pos_end = pos_csv.tail(1)
-        print(pos_end)
-        distal = pos_end['distal_pos'].iloc[0]
-        print(distal)
-    except Exception as e:
-        print("could not read distal pos")
-        distal = 0
+    # try: 
+    #     #pos_initial = obj_csv.iloc[0]
+    #     pos_end = pos_csv.tail(1)
+    #     distal = pos_end['distal_pos'].iloc[0]
+    # except Exception as e:
+    #     distal = 0
 
-    fitness = abs(distance) * 100 + distal * 10
-    print("[COACH] fitness = " + str(fitness))
-    return fitness 
+    # fitness = abs(distance) * 100 #+ distal * 10
+    # print("[COACH] fitness = " + str(fitness))
+    # return fitness 
     #sum_initial = px_initial ** 2 + py_initial ** 2 + pz_initial ** 2
     #sum_end = px_end ** 2 + py_end ** 2 + pz_end ** 2
     #distance = math.sqrt(abs(sum_initial - sum_end))
@@ -116,13 +116,32 @@ def save_distance_csv(sim, datadir):
         csv_data = sim.get_csv_data(distance_distal_csv_name) #solution ,
         cf.writerows(csv_data) 
 
+
+def save_state_csv(sim, datadir): 
+    with open(os.path.join(datadir, "state.csv"), 'wb') as f: 
+
+        cf = csv.writer(f) 
+        ################################################# ,
+        # Insert code here: ,
+        # get the CSV data from the simulation ,
+        ################################################# ,
+        csv_data = sim.get_csv_data("state.csv") #solution ,
+
+        try:
+            sim_state = csv_data.tail(1)
+            print("Set state to " + str(sim_state))
+        except:
+            print("error")
+            sim_state = "RESET"
+
+
 # The function make_on_status() returns a on_status() function ,
 # This is called a "closure":  ,
 # it is here used to pass the sim and datadir objects to on_status() ,
 def make_on_status(sim, datadir): 
     def on_status(msg): 
 
-        print("Current simulation time: {}".format(msg['simulationTime'])) 
+        #print("Current simulation time: {}".format(msg['simulationTime'])) 
 
         save_position_csv(sim, datadir)
         save_distance_csv(sim, datadir) 
@@ -150,6 +169,14 @@ def make_on_status(sim, datadir):
             if None != fitness :
                 sim.pause()
                 gen.set_fitness(move_index, fitness)
+                if fitness > max_fitness:
+                    global max_fitness
+                    max_fitness = fitness
+                    global best_move
+                    best_move = next_gen[move_index]
+                    print("NEW BEST MOVE: ")
+                    print(best_move)
+                    print("FITNESS = " + str(max_fitness))
                 sim.reset('full')
                 print("-----------------------------------------------------")
                 global sim_status
@@ -176,6 +203,15 @@ def make_transfer_function_from_gen(gen):
 
     return move_arm_tf
 
+arm_file = "arm_control.py"
+def make_arm_control_from_gen(next_gen, move_index):
+    gen = next_gen[move_index]
+    with open(arm_file, 'r') as tf_file:
+        move_arm_tf = tf_file.read()
+        move_arm_tf = move_arm_tf.format(gen.tolist())
+        return move_arm_tf
+    
+
 def wait_for_callback():
     global sim_status
     while sim_status == RUNNING:
@@ -187,12 +223,12 @@ def wait_for_callback():
 print("Starting simulation...")
 vc = VirtualCoach(environment=ENV, storage_username=USER)
 sim = vc.launch_experiment(EXPERIMENT)
-sim.delete_transfer_function(OLD_TF)
+#sim.delete_transfer_function(OLD_TF)
 
 print("Creating genetic helper object...")
-start_movement = np.array([1,1,1,1,1,1])
+start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
 
-gen = Genetic(start_movement, pool_size=5, mutation=0.5, mating_pool_size=4)
+gen = Genetic(start_movement, pool_size=10, mutation=0.5, mating_pool_size=4)
     
 weight_costs = []
 trial_weights = np.linspace(0., 1.5, 10)
@@ -204,12 +240,12 @@ try:
         
         for move_index in range(next_gen.shape[0]):
             move_arm_tf = make_transfer_function_from_gen(next_gen)
-
+            arm_control_tf = make_arm_control_from_gen(next_gen, move_index)
             #sim.print_transfer_functions()
                 
             # add transfer function code to platform
             #sim.add_transfer_function(record_obj_tf)
-            sim.edit_transfer_function("move_arm", move_arm_tf)
+            sim.edit_transfer_function("arm_control", arm_control_tf)
             datadir = tempfile.mkdtemp()
             sim.register_status_callback(make_on_status(sim, datadir))
             print("[COACH] Generation {}/{} Movement {}/{}".format(gen_index+1,GENS,move_index+1,next_gen.shape[0]))
