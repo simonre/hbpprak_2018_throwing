@@ -223,7 +223,7 @@ with sm:
     StateMachine.add(
       "grasp2",
       GraspState(2),
-      transitions = {"success": "throw",
+      transitions = {"success": "end",
                      "aborted": ERROR}
     )
     StateMachine.add(
