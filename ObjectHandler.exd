@@ -98,13 +98,13 @@ class ResetState(State):
         self._rate = rospy.Rate(rate)
 
     def execute(self, userdata):
-        self._spawn_proxy(self._cylinder_msg)
         start_time = rospy.Time.now()
-        clientLogger.info("Sending RESET")
+        clientLogger.advertise("Sending RESET")
         self._robot_topic.publish(String("RESET"))
         while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
             self._rate.sleep()
         clientLogger.info("Changing to preparation state")
+        self._spawn_proxy(self._cylinder_msg)
         return 'success'
       
         
@@ -117,17 +117,49 @@ class PrepareState(State):
 
     def execute(self, userdata):
         start_time = rospy.Time.now()
-        clientLogger.info("Sending PREPARE")
+        clientLogger.advertise("Sending PREPARE")
         self._robot_topic.publish(String("PREPARE"))
         while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
             self._rate.sleep()
-        clientLogger.info("Changing to hit state")
+        clientLogger.info("Changing to grasp 1 state")
         return 'success'
 
+class GraspState(State):
+    def __init__(self, num, rate=1., outcomes=['success', 'aborted'], max_duration=1):
+        super(GraspState, self).__init__(outcomes=outcomes)
+        self._rate = rospy.Rate(rate)
+        self.num = num
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
+        self.max_duration=max_duration
 
-class HitState(State):
-    def __init__(self, cylinder_name, rate=1., outcomes=['success', 'aborted'], max_hit_duration=5):
-        super(HitState, self).__init__(outcomes=outcomes)
+    def execute(self, userdata):
+        start_time = rospy.Time.now()
+        clientLogger.advertise("Sending GRASP{}".format(self.num))
+        self._robot_topic.publish(String("GRASP{}".format(self.num)))
+        while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
+            self._rate.sleep()
+        clientLogger.info("Changing state")
+        return 'success'
+
+class ThrowState(State):
+    def __init__(self, rate=1., outcomes=['success', 'aborted'], max_duration=0.001):
+        super(ThrowState, self).__init__(outcomes=outcomes)
+        self._rate = rospy.Rate(rate)
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
+        self.max_duration=max_duration
+
+    def execute(self, userdata):
+        start_time = rospy.Time.now()
+        clientLogger.advertise("Sending THROW")
+        self._robot_topic.publish(String("THROW"))
+        while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
+            self._rate.sleep()
+        clientLogger.info("Changing state")
+        return 'success'
+
+class EndState(State):
+    def __init__(self, cylinder_name, rate=1., outcomes=['success', 'aborted'], max_hit_duration=2):
+        super(EndState, self).__init__(outcomes=outcomes)
         self._rate = rospy.Rate(rate)
         self._cylinder_name = cylinder_name
         self._state_proxy = ServiceProxy('/gazebo/get_model_state',
@@ -140,8 +172,8 @@ class HitState(State):
 
     def execute(self, userdata):
         start_time = rospy.Time.now()
-        clientLogger.info("Sending HIT")
-        self._robot_topic.publish(String("HIT"))
+        clientLogger.advertise("Sending END")
+        self._robot_topic.publish(String("END"))
         while not self.cylinder_lower_than(0.2):
             if (rospy.Time.now() - start_time) >= rospy.Duration(self.max_hit_duration):
                 break
@@ -179,12 +211,30 @@ with sm:
     StateMachine.add(
       "prepare",
       PrepareState(),
-      transitions = {"success": "hit_cylinder",
+      transitions = {"success": "grasp2",
                      "aborted": ERROR}
     )
     StateMachine.add(
-      "hit_cylinder",
-      HitState(cylinder_name),
+      "grasp1",
+      GraspState(1),
+      transitions = {"success": "grasp2",
+                     "aborted": ERROR}
+    )
+    StateMachine.add(
+      "grasp2",
+      GraspState(2),
+      transitions = {"success": "throw",
+                     "aborted": ERROR}
+    )
+    StateMachine.add(
+      "throw",
+      ThrowState(),
+      transitions = {"success": "end",
+                     "aborted": ERROR}
+    )
+    StateMachine.add(
+      "end",
+      EndState(cylinder_name),
       transitions = {"success": "reset_cylinder",
                      "aborted": ERROR}
     )
