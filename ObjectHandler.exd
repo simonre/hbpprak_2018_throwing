@@ -93,6 +93,10 @@ class ResetState(State):
         self._cylinder_msg.initial_pose.position.y = -0.25321
         self._cylinder_msg.initial_pose.position.z = 1.12015
         self._cylinder_msg.reference_frame = "world"
+
+        self._delete_proxy = ServiceProxy('/gazebo/delete_model',
+                                         DeleteModel, persistent=True)
+        
         self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
         self.max_duration=max_duration
         self._rate = rospy.Rate(rate)
@@ -105,11 +109,13 @@ class ResetState(State):
         while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
             self._rate.sleep()
         clientLogger.info("Changing to preparation state")
+        self._delete_proxy(self._cylinder_name)
+        self._spawn_proxy(self._cylinder_msg)
         return 'success'
       
         
 class PrepareState(State):
-    def __init__(self, rate=1., outcomes=['success', 'aborted'], max_duration=2):
+    def __init__(self, cylinder_name, rate=1., outcomes=['success', 'aborted'], max_duration=2):
         super(PrepareState, self).__init__(outcomes=outcomes)
         self._rate = rospy.Rate(rate)
         self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
@@ -182,7 +188,7 @@ with sm:
     )
     StateMachine.add(
       "prepare",
-      PrepareState(),
+      PrepareState(cylinder_name),
       transitions = {"success": "hit_cylinder",
                      "aborted": ERROR}
     )
