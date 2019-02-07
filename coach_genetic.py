@@ -59,9 +59,10 @@ def get_distance(pos_initial, pos_end):
 def calculate_fitness(pos_csv, dist_csv):
     try:
         # fitness in this case is just the distance between initial position and end position
-        position_initial = pos_csv.iloc[0]
-        position_end = pos_csv.tail(1)
-        distance = get_distance(position_initial, position_end)
+        #position_initial = pos_csv.iloc[0]
+        #position_end = pos_csv.tail(1)
+        #distance = get_distance(position_initial, position_end)
+        distance = dist_csv.tail(1)['dist'].item()
         return distance
     except Exception as e:
         return None  
@@ -94,44 +95,38 @@ def set_simulation_state(csv_file):
         current_state = pattern.sub('', current_state)
 
         global current_sim_state
-        #if current_state != "PREPARE" and current_state != "RESET":
-        #    pass
-        print("Current state = " + str(current_state))
-        print("SIMUL Current simulation state = " + str(current_sim_state))
         if current_state != current_sim_state:
-            print("SIMUL changing state")
             global last_sim_state
             last_sim_state = current_sim_state
             current_sim_state = current_state
     except EmptyDataError:
         print("[DEBUG] There has not been a state change yet")
     except Exception:
-        print("Other exception")
+        print("SIMUL Other exception")
 
 def make_on_status(sim, datadir): 
     def on_status(msg):  
         # get the csv files from the simulation
         save_csv(sim, datadir, pos_csv_name)
-        #save_csv(sim, datadir, distance_distal_csv_name)
+        save_csv(sim, datadir, distance_distal_csv_name)
 
         pos_csv_file = os.path.join(datadir, pos_csv_name)
-        #dist_csv_file = os.path.join(datadir, distance_distal_csv_name)
+        dist_csv_file = os.path.join(datadir, distance_distal_csv_name)
 
         set_simulation_state(pos_csv_file)
-        print("SIMUL Current state = " + str(current_sim_state))
-        print("SIMUL Last simulation state = " + str(last_sim_state))
 
         if(sim_is_resetting()):
             sim.pause()
             pos_obj_csv = None
             dis_obj_csv = None
-
+            fitness = 0
             try: 
                 pos_obj_csv = pd.read_csv(pos_csv_file) 
                 dis_obj_csv = pd.read_csv(dist_csv_file)  
                 fitness = calculate_fitness(pos_obj_csv, dis_obj_csv) 
-            except:
-                return 
+                print("SIMUL fitness of movement is " + str(fitness))
+            except Exception as e:
+                print(str(e)) 
 
             gen.set_fitness(move_index, fitness)
             if fitness > max_fitness:
@@ -160,15 +155,16 @@ sim = vc.launch_experiment(EXPERIMENT)
 print("Creating genetic helper object...")
 start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
 
-gen = Genetic(start_movement, pool_size=10, mutation=0.5, mating_pool_size=4)
+gen = Genetic(start_movement, pool_size=12, mutation=3, mating_pool_size=3)
     
 weight_costs = []
 trial_weights = np.linspace(0., 1.5, 10)
 
 try:
-    generations = 5
+    generations = 6
     for gen_index in range(generations):
         # get next generation of movements
+        gen.set_mutation(gen.get_mutation() * 0.5)
         next_gen = gen.next_gen()
         
         for move_index in range(next_gen.shape[0]):
@@ -192,9 +188,9 @@ try:
 
         
             
-    print("     Finished whole simulation!")
-    print("Winner:")
-    print(gen.fittest())
+    print("SIMUL Finished whole simulation!")
+    print(" SIMUL Winner:")
+    print("SIMUL " + str(gen.fittest()))
     
 finally:
     sim.stop()

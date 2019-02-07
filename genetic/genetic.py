@@ -16,6 +16,12 @@ class Genetic:
         self.mutation = mutation
         self.generations = []
         self.fitness = []
+
+    def set_mutation(self, mutation):
+        self.mutation = mutation
+
+    def get_mutation(self):
+        return self.mutation
     
     def set_fitness(self, index, value):
         """ Set the fitness of a gene in the current generation. """
@@ -115,12 +121,11 @@ class Genetic:
             
         return offspring
     
-    @staticmethod
-    def _mutate(offspring):
+    def _mutate(self, offspring):
         """
         Mutates the offspring by adding a randomly calculated value to each component.
         """
         
         print('Mutating offspring...')
-        mutation = np.random.uniform(-0.5, 0.5, offspring.shape)
+        mutation = np.random.uniform(-self.mutation, self.mutation, offspring.shape)
         return offspring + mutation
