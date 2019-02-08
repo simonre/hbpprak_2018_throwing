@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class Genetic:
     """
@@ -107,7 +108,7 @@ class Genetic:
         print('Mating...')
         n_offspring = self.pool_size - self.mating_pool_size
         offspring = np.empty((n_offspring, self.length))
-        crossover_point = np.uint8(self.length/2)
+        #crossover_point = np.uint8(self.length/2)
     
         for k in range(n_offspring):
             # Index of the first parent to mate.
@@ -115,9 +116,13 @@ class Genetic:
             # Index of the second parent to mate.
             parent2_idx = (k+1)%self.mating_pool_size
             # The new offspring will have its first half of its genes taken from the first parent.
-            offspring[k, 0:crossover_point] = parents[parent1_idx, 0:crossover_point]
+            for index in range(self.length):
+                rand = bool(random.getrandbits(1))
+                if rand: offspring[k, index] = parents[parent1_idx, index]
+                else:    offspring[k, index] = parents[parent2_idx, index]
+            #offspring[k, 0:crossover_point] = parents[parent1_idx, 0:crossover_point]
             # The new offspring will have its second half of its genes taken from the second parent.
-            offspring[k, crossover_point:] = parents[parent2_idx, crossover_point:]
+            #offspring[k, crossover_point:] = parents[parent2_idx, crossover_point:]
             
         return offspring
     

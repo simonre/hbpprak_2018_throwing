@@ -31,7 +31,7 @@ best_move = [0,0,0,0,0]
 pos_csv_name = "obj_position.csv"
 distance_distal_csv_name = "distance.csv"
 state_csv_name = "state.csv"
-arm_file = "arm_control_templ.py"
+arm_file = "arm_control_editable.py"
 
 last_sim_state = "RESET"
 current_sim_state = "RESET"
@@ -138,8 +138,11 @@ def make_arm_control_from_gen(next_gen, move_index):
     gen = next_gen[move_index]
     with open(arm_file, 'r') as tf_file:
         move_arm_tf = tf_file.read()
-        move_arm_tf = move_arm_tf.format(gen.tolist())
-        print("[DEBUG] " + str(move_arm_tf))
+        gen_list = gen.tolist()
+        move_arm_tf = move_arm_tf.format(gen_list[:6], gen_list[6:])
+        #print("[DEBUG] " + str(move_arm_tf))
+        print("Prepare " + str(gen_list[:6]))
+        print("Hit "     + str(gen_list[6:]))
         return move_arm_tf
 
 def start_sim(sim):
@@ -153,44 +156,51 @@ vc = VirtualCoach(environment=ENV, storage_username=USER)
 sim = vc.launch_experiment(EXPERIMENT)
 
 print("Creating genetic helper object...")
-start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+prepare_default = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+hit_default     = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+# decent hit: [   -2, -0.9, 0.9, 0, 0, -0.5]
 
-gen = Genetic(start_movement, pool_size=12, mutation=3, mating_pool_size=3)
-    
-weight_costs = []
-trial_weights = np.linspace(0., 1.5, 10)
+start_movement = np.append(prepare_default, hit_default)
+
+gen = Genetic(start_movement, pool_size=15, mutation=0.25, mating_pool_size=3)
 
 try:
-    generations = 6
-    for gen_index in range(generations):
-        # get next generation of movements
-        gen.set_mutation(gen.get_mutation() * 0.5)
-        next_gen = gen.next_gen()
-        
-        for move_index in range(next_gen.shape[0]):
-
-            # create a new transfer function that controls the arm
-            arm_control_tf = make_arm_control_from_gen(next_gen, move_index)
-            sim.edit_transfer_function("arm_control", arm_control_tf)
-            print("SIMUL edited transfer function")
-
-            # register a function that is called every time there is a new status
-            datadir = tempfile.mkdtemp()
-            sim.register_status_callback(make_on_status(sim, datadir))
-
-            print("[COACH] Generation {}/{} Movement {}/{}".format(gen_index+1,generations,move_index+1,next_gen.shape[0]))
+    # register a function that is called every time there is a new status
+    datadir = tempfile.mkdtemp()
+    sim.register_status_callback(make_on_status(sim, datadir))
+    
+    for _ in range(10):
+        generations = 8
+        for gen_index in range(generations):
+            # get next generation of movements
+            next_gen = gen.next_gen()
             
-            start_sim(sim)
-            print("Started simulation")
-
-            wait_for_simulation_reset()
-            print("SIMUL restarting")
-
-        
+            for move_index in range(next_gen.shape[0]):
+                # create a new transfer function that controls the arm
+                arm_control_tf = make_arm_control_from_gen(next_gen, move_index)
+                sim.edit_transfer_function("arm_control", arm_control_tf)
+                print("SIMUL edited transfer function")
+    
+                print("[COACH] Generation {}/{} Movement {}/{}".format(gen_index+1,generations,move_index+1,next_gen.shape[0]))
+                
+                start_sim(sim)
+                print("Started simulation")
+    
+                wait_for_simulation_reset()
+                print("SIMUL restarting")
+                
+                if (move_index+1) % 3 == 0: sim.reset('full')
+                
+            gen.mutation *= 0.9
+    
             
-    print("SIMUL Finished whole simulation!")
-    print(" SIMUL Winner:")
-    print("SIMUL " + str(gen.fittest()))
+                
+        print("SIMUL Finished whole simulation!")
+        print(" SIMUL Winner:")
+        print("SIMUL " + str(gen.fittest()))
+        
+        with open("results.txt", "a+") as out_file:
+            out_file.write(str(gen.fittest()) + "\n")
     
 finally:
     sim.stop()
