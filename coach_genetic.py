@@ -37,7 +37,7 @@ last_sim_state = "RESET"
 current_sim_state = "RESET"
 
 def sim_is_resetting():
-    return current_sim_state == "RESET" and last_sim_state == "HIT"
+    return current_sim_state == "RESET" and last_sim_state == "END"
 
 def wait_for_simulation_reset():
     while not (sim_is_resetting()):
@@ -101,8 +101,8 @@ def set_simulation_state(csv_file):
             current_sim_state = current_state
     except EmptyDataError:
         print("[DEBUG] There has not been a state change yet")
-    except Exception:
-        print("SIMUL Other exception")
+    except Exception as e:
+        print(str(e))
 
 def make_on_status(sim, datadir): 
     def on_status(msg):  
@@ -155,7 +155,7 @@ sim = vc.launch_experiment(EXPERIMENT)
 print("Creating genetic helper object...")
 start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
 
-gen = Genetic(start_movement, pool_size=12, mutation=3, mating_pool_size=3)
+gen = Genetic(start_movement, pool_size=12, mutation=6, mating_pool_size=3)
     
 weight_costs = []
 trial_weights = np.linspace(0., 1.5, 10)
@@ -164,7 +164,7 @@ try:
     generations = 6
     for gen_index in range(generations):
         # get next generation of movements
-        gen.set_mutation(gen.get_mutation() * 0.5)
+        
         next_gen = gen.next_gen()
         
         for move_index in range(next_gen.shape[0]):
@@ -185,6 +185,7 @@ try:
 
             wait_for_simulation_reset()
             print("SIMUL restarting")
+        gen.set_mutation(gen.get_mutation() * 0.8)
 
         
             

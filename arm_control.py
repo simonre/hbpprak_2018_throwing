@@ -29,9 +29,12 @@ def arm_control(t,
     topics_arm = [topic_arm_1, topic_arm_2, topic_arm_3, topic_arm_4, topic_arm_5, topic_arm_6]
 
     commands_confs = {{
-            "HIT": {},
-            "PREPARE": [-0.45, -0.9, 0.9, 0, 0, -0.5],
-            "RESET": [0, 0, 0, 0, 0, 0]
+            "RESET":   ([0, 0,    0, 0, 0, 0], 0),
+            "PREPARE": ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0),
+            "GRASP1":  ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0.3),
+            "GRASP2":  ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0.7),
+            "THROW":   ([-0.45, 5, -2, 0.5, -0.7, -0.5], 0.7),
+            "END":     ({}, 0)
         }}
 
 
