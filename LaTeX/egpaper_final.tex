@@ -132,7 +132,16 @@ The first approach is to let the robot arm hit the cylinder away from the table.
 \section{Second Approach} \label{sec:secondApproach}
 
 The second approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the first approach.
-The evolutionary algorithm which is used to let the robot learn the hit movement is described below:
+The evolutionary algorithm which is used to let the robot learn the hit movement is shown in figure \ref{fig:EA_2} and described below:
+
+\begin{figure}
+	\begin{center}
+		\includegraphics[trim = 1cm 2.3cm 1cm 4cm, clip, width=0.4\textwidth]{Presentation1-seiten-5}
+	\end{center}
+	\caption{The evolutionary algorithm used in the second approach to let the robot improve the hit movement.}
+	\label{fig:EA_2}
+\end{figure}
+
 
 An individual of each generation consists of an array of six components (genes) that represent the joints of the robot. The start array is defined as $\begin{bmatrix}
 				1 & 1 & 1 & 1 & 1 & 1
@@ -166,7 +175,17 @@ $\begin{bmatrix}
 -0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
 \end{bmatrix}$.
 In this approach, the start pool consists of 15 individuals which are generated from the start array by adding random values between $\{-0.25,0.25\}$ to each component. The mating pool consists of three parents.
-The evolutionary algorithm is executed as in the second approach (with the previously described changes). It is repeated for eight generations. 
+The evolutionary algorithm is executed as in the second approach (with the previously described changes), see figure \ref{fig:EA_3}.
+
+\begin{figure}
+	\begin{center}
+		\includegraphics[trim = 1cm 2.3cm 0.5cm 4cm, clip, width=0.4\textwidth]{Presentation1-seiten-7}
+	\end{center}
+	\caption{The evolutionary algorithm used in the third approach to let the robot improve the prepare and hit movements.}
+	\label{fig:EA_3}
+\end{figure}
+
+It is repeated for eight generations. 
 
 The array of the winner is 
 				$\begin{bmatrix}
