@@ -7,11 +7,11 @@ P.~Flick.
   \url{http://parco.iti.kit.edu/henningm/Seminar-AT/seminar-arbeiten/Flick_final.pdf},
   accessed 03.02.2019, 2012.
 
-\bibitem{MC}
-S.~Paltani.
-\newblock Monte carlo methods.
+\bibitem{MCMC}
+A.~Stamatakis.
+\newblock Introduction to bioinformatics for computer scientists, lecture 12.
 \newblock
-  \url{https://www.unige.ch/sciences/astro/files/2713/8971/4086/3_Paltani_MonteCarlo.pdf},
-  accessed 03.02.2019, 2010.
+  \url{https://cme.h-its.org/exelixis/web/teaching/lectures18_19/lecture12.pdf},
+  accessed 10.02.2019, 2018.
 
 \end{thebibliography}
