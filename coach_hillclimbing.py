@@ -32,16 +32,30 @@ pos_csv_name = "obj_position.csv"
 distance_distal_csv_name = "distance.csv"
 state_csv_name = "state.csv"
 arm_file = "arm_control_templ.py"
+can_reset = False
 
 last_sim_state = "RESET"
 current_sim_state = "RESET"
 
+
 def sim_is_resetting():
     return current_sim_state == "RESET" and last_sim_state == "END"
 
+def can_run_next_iteration():
+    return sim_is_resetting() and can_reset
+
 def wait_for_simulation_reset():
-    while not (sim_is_resetting()):
+    while not (can_run_next_iteration()):
         time.sleep(1)
+
+def movement_accepted(current_movement, next_movement):
+    if next_movement.fitness > current_movement.fitness:
+        return True
+    else:
+        ratio = next_movement.fitness / current_movement.fitness
+        print("[COACH] ratio is " + str(ratio))
+        return random.random() < ratio
+
 
 def get_distance(pos_initial, pos_end):
     px_initial = pos_initial['px']
@@ -63,7 +77,7 @@ def calculate_fitness(pos_csv, dist_csv):
         #position_end = pos_csv.tail(1)
         #distance = get_distance(position_initial, position_end)
         distance = dist_csv.tail(1)['dist'].item()
-        return distance
+        return abs(distance)
     except Exception as e:
         return None  
 
@@ -75,16 +89,11 @@ def save_csv(sim, datadir, filename):
             csv_data = sim.get_csv_data(filename)
             cf.writerows(csv_data) 
     except:
-        print("[DEBUG] error reading " + str(filename))
+        print("[COACH] error reading " + str(filename))
 
-def set_new_max_fitness(fitness):
-    global max_fitness
-    max_fitness = fitness
+def set_new_max_fitness(movement):
     global best_move
-    best_move = next_gen[move_index]
-    print("NEW BEST MOVE: ")
-    print(best_move)
-    print("FITNESS = " + str(max_fitness))
+    best_move = movement
 
 def set_simulation_state(csv_file):
     try:
@@ -99,10 +108,12 @@ def set_simulation_state(csv_file):
             global last_sim_state
             last_sim_state = current_sim_state
             current_sim_state = current_state
+            return True
     except EmptyDataError:
-        print("[DEBUG] There has not been a state change yet")
+        print("[COACH] There has not been a state change yet")
     except Exception as e:
         print(str(e))
+    return False
 
 def make_on_status(sim, datadir): 
     def on_status(msg):  
@@ -113,9 +124,9 @@ def make_on_status(sim, datadir):
         pos_csv_file = os.path.join(datadir, pos_csv_name)
         dist_csv_file = os.path.join(datadir, distance_distal_csv_name)
 
-        set_simulation_state(pos_csv_file)
+        new_states_set = set_simulation_state(pos_csv_file)
 
-        if(sim_is_resetting()):
+        if(sim_is_resetting() and new_states_set):
             sim.pause()
             pos_obj_csv = None
             dis_obj_csv = None
@@ -128,24 +139,39 @@ def make_on_status(sim, datadir):
             except Exception as e:
                 print(str(e)) 
 
-            gen.set_fitness(move_index, fitness)
-            if fitness > max_fitness:
-                set_new_max_fitness(fitness)
+            global next_movement
+            next_movement.fitness = fitness
+            global can_reset
+            can_reset = True
 
     return on_status
 
-def make_arm_control_from_gen(next_gen, move_index):
-    gen = next_gen[move_index]
+def get_next_movement(current_movement, mutation):
+    mutated_movement = np.random.uniform(-mutation, mutation, current_movement.movement.shape) + current_movement.movement
+    return Movement(mutated_movement)
+
+
+def make_arm_control_from_movement(movement):
     with open(arm_file, 'r') as tf_file:
         move_arm_tf = tf_file.read()
-        move_arm_tf = move_arm_tf.format(gen.tolist())
-        print("[DEBUG] " + str(move_arm_tf))
+        move_arm_tf = move_arm_tf.format(movement.movement.tolist())
+        print("[COACH] " + str(move_arm_tf))
         return move_arm_tf
 
 def start_sim(sim):
     global last_sim_state
     last_sim_state = "NONE"
     sim.start()
+
+class Movement():
+    movement = None
+    fitness = 0
+    def __init__(self, movement, fitness=0):
+        self.movement = movement
+        self.fitness = fitness
+
+
+
     
 
 print("Starting simulation...")
@@ -153,45 +179,52 @@ vc = VirtualCoach(environment=ENV, storage_username=USER)
 sim = vc.launch_experiment(EXPERIMENT)
 
 print("Creating genetic helper object...")
-start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+current_movement = Movement(np.array([-0.45, -0.9, 0.9, 0, 0, -0.5]))
+current_movement = Movement(np.array([-0.45, -0.9, 0.9, 0, 0, -0.5]))
 
-gen = Genetic(start_movement, pool_size=12, mutation=6, mating_pool_size=3)
     
 weight_costs = []
 trial_weights = np.linspace(0., 1.5, 10)
 
+
 try:
-    generations = 6
-    for gen_index in range(generations):
+    mutation = 2
+    steps = 100
+    datadir = tempfile.mkdtemp()
+    sim.register_status_callback(make_on_status(sim, datadir))
+
+    for step in range(steps):
+        global can_reset
+        can_reset = False
+
         # get next generation of movements
+        global next_movement
+        next_movement = get_next_movement(current_movement, mutation)
+
         
-        next_gen = gen.next_gen()
+        # create a new transfer function that controls the arm
+        arm_control_tf = make_arm_control_from_movement(next_movement)
+        sim.edit_transfer_function("arm_control", arm_control_tf)
+        print("[COACH] edited transfer function")
+
+        # register a function that is called every time there is a new status
+
+        print("[COACH] Movement {}/{}".format(step, steps))
         
-        for move_index in range(next_gen.shape[0]):
+        start_sim(sim)
+        print("[COACH] Started simulation")
 
-            # create a new transfer function that controls the arm
-            arm_control_tf = make_arm_control_from_gen(next_gen, move_index)
-            sim.edit_transfer_function("arm_control", arm_control_tf)
-            print("SIMUL edited transfer function")
+        wait_for_simulation_reset()
+        print("[COACH] restarting")
 
-            # register a function that is called every time there is a new status
-            datadir = tempfile.mkdtemp()
-            sim.register_status_callback(make_on_status(sim, datadir))
-
-            print("[COACH] Generation {}/{} Movement {}/{}".format(gen_index+1,generations,move_index+1,next_gen.shape[0]))
+        if movement_accepted(current_movement, next_movement):
+            current_movement = next_movement
+            print("[COACH] new movement accepted with fitness " + str(next_movement.fitness))
+        
             
-            start_sim(sim)
-            print("Started simulation")
-
-            wait_for_simulation_reset()
-            print("SIMUL restarting")
-        gen.set_mutation(gen.get_mutation() * 0.8)
-
-        
-            
-    print("SIMUL Finished whole simulation!")
-    print(" SIMUL Winner:")
-    print("SIMUL " + str(gen.fittest()))
+    print("[COACH] Finished whole simulation!")
+    print("[COACH] Winner:")
+    print("[COACH]" + current_movement)
     
 finally:
     sim.stop()
