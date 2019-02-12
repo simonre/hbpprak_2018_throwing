@@ -26,7 +26,7 @@ class Genetic:
     
     def set_fitness(self, index, value):
         """ Set the fitness of a gene in the current generation. """
-        
+        print("Setting fitness of " + str(index) + " to " + str(value))
         self.fitness[-1][index] = value
     
     def next_gen(self):

@@ -16,10 +16,8 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 import math
 import re
-import string 
-ENV = 'local'
-USER = 'nrpuser'
-EXPERIMENT = 'hbpprak_2018_throwing'
+import string
+
 move_joint_text = "arm_{}.send_message(std_msgs.msg.Float64({}))" 
 RUNNING = 0 
 STOPPED = 1
@@ -35,33 +33,13 @@ arm_file = "arm_control_editable.py"
 
 last_sim_state = "RESET"
 current_sim_state = "RESET"
+notify_next_move = False
 
 def sim_is_resetting():
     return current_sim_state == "RESET" and last_sim_state == "HIT"
 
-def wait_for_simulation_reset():
-    while not (sim_is_resetting()):
-        time.sleep(1)
-
-def get_distance(pos_initial, pos_end):
-    px_initial = pos_initial['px']
-    py_initial = pos_initial['py']
-    pz_initial = pos_initial['pz']
-    px_end = pos_end['px']
-    py_end = pos_end['py']
-    pz_end = pos_end['pz']
-    sum_initial = px_initial ** 2 + py_initial ** 2 + pz_initial ** 2
-    sum_end = px_end ** 2 + py_end ** 2 + pz_end ** 2
-    distance = math.sqrt(abs(sum_initial - sum_end))
-    return abs(distance)
-        
-
 def calculate_fitness(pos_csv, dist_csv):
     try:
-        # fitness in this case is just the distance between initial position and end position
-        #position_initial = pos_csv.iloc[0]
-        #position_end = pos_csv.tail(1)
-        #distance = get_distance(position_initial, position_end)
         distance = dist_csv.tail(1)['dist'].item()
         return distance
     except Exception as e:
@@ -82,30 +60,33 @@ def set_new_max_fitness(fitness):
     max_fitness = fitness
     global best_move
     best_move = next_gen[move_index]
-    print("NEW BEST MOVE: ")
-    print(best_move)
-    print("FITNESS = " + str(max_fitness))
+    print("NEW BEST MOVE: ", np.round(best_move, 2))
 
 def set_simulation_state(csv_file):
     try:
         sim_state_data = pd.read_csv(csv_file)
         current_state = sim_state_data.tail(1)["state"].max()
         pattern = re.compile('[\W_]+') 
-
+        
+        if isinstance(current_state, float): return
         current_state = pattern.sub('', current_state)
 
         global current_sim_state
         if current_state != current_sim_state:
             global last_sim_state
+            print("Current state: " + str(current_state))
             last_sim_state = current_sim_state
             current_sim_state = current_state
     except EmptyDataError:
-        print("[DEBUG] There has not been a state change yet")
-    except Exception:
-        print("SIMUL Other exception")
+        pass
+        #print("[DEBUG] There has not been a state change yet")
+    except Exception as e:
+        print("Set sim state Exception:", e)
+        print("-------------------------")
 
-def make_on_status(sim, datadir): 
-    def on_status(msg):  
+def make_on_status(sim, datadir):
+    def on_status(msg):
+        global notify_next_move
         # get the csv files from the simulation
         save_csv(sim, datadir, pos_csv_name)
         save_csv(sim, datadir, distance_distal_csv_name)
@@ -115,7 +96,7 @@ def make_on_status(sim, datadir):
 
         set_simulation_state(pos_csv_file)
 
-        if(sim_is_resetting()):
+        if(sim_is_resetting() and not notify_next_move):
             sim.pause()
             pos_obj_csv = None
             dis_obj_csv = None
@@ -126,11 +107,14 @@ def make_on_status(sim, datadir):
                 fitness = calculate_fitness(pos_obj_csv, dis_obj_csv) 
                 print("SIMUL fitness of movement is " + str(fitness))
             except Exception as e:
-                print(str(e)) 
+                print("Make status Exception: ", e)
+                print("-------------------------")
 
-            gen.set_fitness(move_index, fitness)
+            if fitness is None: gen.set_fitness(move_index, 0) # something strange happened
+            else: gen.set_fitness(move_index, fitness)
             if fitness > max_fitness:
                 set_new_max_fitness(fitness)
+            notify_next_move = True
 
     return on_status
 
@@ -141,8 +125,8 @@ def make_arm_control_from_gen(next_gen, move_index):
         gen_list = gen.tolist()
         move_arm_tf = move_arm_tf.format(gen_list[:6], gen_list[6:])
         #print("[DEBUG] " + str(move_arm_tf))
-        print("Prepare " + str(gen_list[:6]))
-        print("Hit "     + str(gen_list[6:]))
+        print("Prepare " + str(np.round(gen_list[:6], 2)))
+        print("Hit     " + str(np.round(gen_list[6:], 2)))
         return move_arm_tf
 
 def start_sim(sim):
@@ -151,18 +135,17 @@ def start_sim(sim):
     sim.start()
     
 
+vc = VirtualCoach(environment='local', storage_username='nrpuser')
 print("Starting simulation...")
-vc = VirtualCoach(environment=ENV, storage_username=USER)
-sim = vc.launch_experiment(EXPERIMENT)
+sim = vc.launch_experiment('hbpprak_2018_throwing')
 
 print("Creating genetic helper object...")
 prepare_default = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
-hit_default     = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+hit_default     = np.array([   -2, -0.9, 0.9, 0, 0, -0.5])
 # decent hit: [   -2, -0.9, 0.9, 0, 0, -0.5]
 
 start_movement = np.append(prepare_default, hit_default)
-
-gen = Genetic(start_movement, pool_size=15, mutation=0.25, mating_pool_size=3)
+gen = Genetic(start_movement, pool_size=10, mutation=0.25, mating_pool_size=3)
 
 try:
     # register a function that is called every time there is a new status
@@ -170,33 +153,37 @@ try:
     sim.register_status_callback(make_on_status(sim, datadir))
     
     for _ in range(10):
-        generations = 8
+        generations = 6
         for gen_index in range(generations):
-            # get next generation of movements
+            last_sim_state = "RESET"
+            current_sim_state = "RESET"
             next_gen = gen.next_gen()
             
             for move_index in range(next_gen.shape[0]):
+                print("\n----------------------------------------")
+                print("Generation {}/{} Movement {}/{}".format(gen_index+1,generations,move_index+1,next_gen.shape[0]))
+                print("----------------------------------------")
+                
                 # create a new transfer function that controls the arm
                 arm_control_tf = make_arm_control_from_gen(next_gen, move_index)
-                sim.edit_transfer_function("arm_control", arm_control_tf)
-                print("SIMUL edited transfer function")
-    
-                print("[COACH] Generation {}/{} Movement {}/{}".format(gen_index+1,generations,move_index+1,next_gen.shape[0]))
+                sim.edit_transfer_function('arm_control', arm_control_tf)
+                print("Applied new transfer function")
                 
                 start_sim(sim)
                 print("Started simulation")
     
-                wait_for_simulation_reset()
-                print("SIMUL restarting")
-                
-                if (move_index+1) % 3 == 0: sim.reset('full')
+                while not notify_next_move:
+                    time.sleep(1)
+                notify_next_move = False
                 
             gen.mutation *= 0.9
+            print("Full reset simulation")
+            sim.reset('full')
     
             
                 
         print("SIMUL Finished whole simulation!")
-        print(" SIMUL Winner:")
+        print("SIMUL Winner:")
         print("SIMUL " + str(gen.fittest()))
         
         with open("results.txt", "a+") as out_file:

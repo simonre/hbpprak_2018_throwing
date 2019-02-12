@@ -9,9 +9,12 @@ import sensor_msgs.msg
 def get_pos(t, sim_state, obj_recorder):
     from rospy import ServiceProxy
     from gazebo_msgs.srv import GetModelState
-
-    model_name = 'cylinder'
-    state_proxy = ServiceProxy('/gazebo/get_model_state', GetModelState, persistent=False)
-    cylinder_state = state_proxy(model_name, "world")
-    current_position = cylinder_state.pose.position
-    obj_recorder.record_entry(t, current_position.x, current_position.y, current_position.z, sim_state.value)
+    
+    try:
+        model_name = 'cylinder'
+        state_proxy = ServiceProxy('/gazebo/get_model_state', GetModelState, persistent=False)
+        cylinder_state = state_proxy(model_name, "world")
+        current_position = cylinder_state.pose.position
+        obj_recorder.record_entry(t, current_position.x, current_position.y, current_position.z, sim_state.value)
+    except Exception:
+        pass
