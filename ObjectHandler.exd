@@ -148,6 +148,22 @@ class GraspState(State):
         clientLogger.info("Changing state")
         return 'success'
 
+class WindupState(State):
+    def __init__(self, rate=1., outcomes=['success', 'aborted'], max_duration=5):
+        super(WindupState, self).__init__(outcomes=outcomes)
+        self._rate = rospy.Rate(rate)
+        self._robot_topic = rospy.Publisher('/arm_robot/arm_commands', String, queue_size=10)
+        self.max_duration=max_duration
+
+    def execute(self, userdata):
+        start_time = rospy.Time.now()
+        clientLogger.advertise("Sending WINDUP")
+        self._robot_topic.publish(String("WINDUP"))
+        while (rospy.Time.now() - start_time) < rospy.Duration(self.max_duration):
+            self._rate.sleep()
+        clientLogger.info("Changing state")
+        return 'success'
+
 class ThrowState(State):
     def __init__(self, rate=1., outcomes=['success', 'aborted'], max_duration=0.001):
         super(ThrowState, self).__init__(outcomes=outcomes)
@@ -222,14 +238,14 @@ with sm:
                      "aborted": ERROR}
     )
     StateMachine.add(
-      "grasp1",
-      GraspState(1),
-      transitions = {"success": "grasp2",
+      "grasp2",
+      GraspState(2),
+      transitions = {"success": "windup",
                      "aborted": ERROR}
     )
     StateMachine.add(
-      "grasp2",
-      GraspState(2),
+      "windup",
+      WindupState(),
       transitions = {"success": "end",
                      "aborted": ERROR}
     )

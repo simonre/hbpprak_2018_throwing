@@ -1,5 +1,3 @@
-import numpy as np
-
 @nrp.MapRobotPublisher("topic_arm_1", Topic('/robot/arm_1_joint/cmd_pos', std_msgs.msg.Float64))
 @nrp.MapRobotPublisher("topic_arm_2", Topic('/robot/arm_2_joint/cmd_pos', std_msgs.msg.Float64))
 @nrp.MapRobotPublisher("topic_arm_3", Topic('/robot/arm_3_joint/cmd_pos', std_msgs.msg.Float64))
@@ -28,14 +26,14 @@ def arm_control(t,
     if command_str == last_command_executed.value: return
     topics_arm = [topic_arm_1, topic_arm_2, topic_arm_3, topic_arm_4, topic_arm_5, topic_arm_6]
 
-    commands_confs = {{
-            "RESET":   ([0, 0,    0, 0, 0, 0], 0),
-            "PREPARE": ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0),
-            "GRASP1":  ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0.3),
-            "GRASP2":  ([-0.45, -1, 1.05, 0.5, -0.7, -0.5], 0.7),
-            "THROW":   ([-0.45, 5, -2, 0.5, -0.7, -0.5], 0.7),
-            "END":     ({}, 0)
-        }}
+    commands_confs = {
+            "RESET":   ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0),
+            "PREPARE": ([-0.45, -1.0, 1.05, 0.5, -0.7, -0.5], 0),
+            "GRASP2":  ([-0.45, -1.0, 1.05, 0.5, -0.7, -0.5], 0.7),
+            "WINDUP":  ([2, -5, -2, -2, 0.5333, -4], 0.7),
+            "THROW":   ([-0.45, 5.0, -2, 0.5, -0.7, -0.5], 0.7),
+            "END":     ([-2.0, -3.0, 1.0, 0.0, -0.0, 1], 0.0)
+        }
 
 
     # parse command

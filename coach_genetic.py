@@ -52,9 +52,7 @@ def get_distance(pos_initial, pos_end):
     pz_end = pos_end['pz']
     sum_initial = px_initial ** 2 + py_initial ** 2 + pz_initial ** 2
     sum_end = px_end ** 2 + py_end ** 2 + pz_end ** 2
-    distance = math.sqrt(abs(sum_initial - sum_end))
-    return abs(distance)
-        
+    distance = math.sqrt(abs(sum_initial - sum_end))        
 
 def calculate_fitness(pos_csv, dist_csv):
     try:
@@ -138,7 +136,7 @@ def make_arm_control_from_gen(next_gen, move_index):
     gen = next_gen[move_index]
     with open(arm_file, 'r') as tf_file:
         move_arm_tf = tf_file.read()
-        move_arm_tf = move_arm_tf.format(gen.tolist())
+        move_arm_tf = move_arm_tf.format(gen.tolist()[:6], gen.tolist()[6:])
         print("[DEBUG] " + str(move_arm_tf))
         return move_arm_tf
 
@@ -153,15 +151,16 @@ vc = VirtualCoach(environment=ENV, storage_username=USER)
 sim = vc.launch_experiment(EXPERIMENT)
 
 print("Creating genetic helper object...")
-start_movement = np.array([-0.45, -0.9, 0.9, 0, 0, -0.5])
+start_movement = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-gen = Genetic(start_movement, pool_size=12, mutation=6, mating_pool_size=3)
+gen = Genetic(start_movement, pool_size=12, mutation=1, mating_pool_size=3)
     
 weight_costs = []
 trial_weights = np.linspace(0., 1.5, 10)
 
 try:
     generations = 6
+    mutation_deterioration_rate = 1
     for gen_index in range(generations):
         # get next generation of movements
         
@@ -185,7 +184,7 @@ try:
 
             wait_for_simulation_reset()
             print("SIMUL restarting")
-        gen.set_mutation(gen.get_mutation() * 0.8)
+        gen.set_mutation(gen.get_mutation() * mutation_deterioration_rate)
 
         
             
