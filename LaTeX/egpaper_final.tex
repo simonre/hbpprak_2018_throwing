@@ -26,7 +26,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{Praktikum: Virtual Neurorobotic in the Human Brain Project}
+\title{Praktikum: Virtual Neurorobotics in the Human Brain Project}
 
 \author{Marie Bommersheim, Rafael K\"ubler, and Simon Reinkemeier\\
 FZI Forschungszentrum Informatik\\
@@ -65,7 +65,7 @@ The aim of our Praktikum is to let the robot arm learn how to throw a cylinder a
 	\label{fig:challenge}
 \end{figure}
 
-Sections \ref{sec:EA} and \ref{sec:MCMC} describe algorithms for solving optimization problems in general. Sections \ref{sec:firstApproach}, \ref{sec:secondApproach}, and \ref{sec:thirdApproach} describe our approaches for solving the Praktikum challenge.
+Sections \ref{sec:EA} and \ref{sec:MCMC} describe algorithms for solving optimization problems in general. Sections \ref{sec:PrepareHit}, \ref{sec:Throw}, and \ref{sec:Windup} describe our approaches for solving the Praktikum challenge.
 
 
 \section{Evolutionary Algorithms} \label{sec:EA}
@@ -97,9 +97,9 @@ These steps are being repeated until a new population of individuals is generate
 	\label{fig:EA}
 \end{figure}
 
-\section{Markov Chain Monte Carlo} \label{sec:MCMC}
+\section{Monte Carlo Markov Chain} \label{sec:MCMC}
 
-Markov Chain Monte Carlo algorithms can be used for hard optimization problems. The idea is to construct a Markov Chain that generates samples such that more time is spent (more samples are evaluated) in the most interesting regions of the state space (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of posterior densities of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). 
+Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is to construct a Markov Chain that generates samples such that more time is spent (more samples are evaluated) in the most interesting regions of the state space (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of posterior densities of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). 
 
 
 \begin{figure}
@@ -119,29 +119,24 @@ Markov Chain Monte Carlo algorithms can be used for hard optimization problems. 
 \end{figure}
 
 
-\section{First Approach} \label{sec:firstApproach}
+\section{Prepare and Hit} \label{sec:PrepareHit}
 
-The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor, the movements are hard-coded.
+The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
+
+\subsection{Hard-coded movements}
+
+At first, the movements are hard-coded:
 
 \begin{itemize}
 \item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
-\item Prepare: Moves the arm in an horizontal position pointing to 10 o'clock.
-\item Hit: With a high acceleration, the arm moves towards the cylinder and knocks it off the table.
+\item Prepare: Moves the arm in an horizontal position next to the cylinder (on the left side of the cylinder as seen from the robot arm).
+\item Hit: The arm moves towards the cylinder and knocks it off the table.
 \end{itemize}
 
-\section{Second Approach} \label{sec:secondApproach}
+\subsection{Hit movement improved} 
 
-The second approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the first approach.
-The evolutionary algorithm which is used to let the robot learn the hit movement is shown in figure \ref{fig:EA_2} and described below:
-
-\begin{figure}
-	\begin{center}
-		\includegraphics[trim = 1cm 2.3cm 1cm 4cm, clip, width=0.4\textwidth]{Presentation1-seiten-5}
-	\end{center}
-	\caption{The evolutionary algorithm used in the second approach to let the robot improve the hit movement.}
-	\label{fig:EA_2}
-\end{figure}
-
+This approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the hard-coded approach.
+The evolutionary algorithm which is used to let the robot learn the hit movement is described below: 
 
 An individual of each generation consists of an array of six components (genes) that represent the joints of the robot. The start array is defined as $\begin{bmatrix}
 				1 & 1 & 1 & 1 & 1 & 1
@@ -149,22 +144,18 @@ An individual of each generation consists of an array of six components (genes) 
 To generate the initial population of ten individuals the start array is mutated by adding random values between $\{-0.1,0.1\}$ to each component.
 Computing the next generation consists of three steps:
 \begin{enumerate}
-\item Selection: The mating pool of four parents is created by selecting the individuals with the highest fitness. The fitness is calculated using the initial (\textit{i}) and the end (\textit{e}) position of the cylinder after knocking it off the table: \textit{fitness} $= \sqrt{|(x_i^2+y_i^2+z_i^2)-(x_e^2+y_e^2+z_e^2)|}$.
+\item Selection: The mating pool of four parents is created by selecting the individuals with the highest fitness. The fitness is calculated using the difference between the initial and the end position of the cylinder after knocking it off the table.
 
-\item Mating: In this algorithm, the parents are carried over to the next generation. The offspring will have its first half of its genes taken from the first parent and the second half of its genes taken from the second parent. 
+\item Mating: In this algorithm, the parents are carried over to the next generation. The recombination process uses one-point crossovers. 
 
 \item Mutation: The offspring is mutated by adding a randomly calculated value between $\{-0.5,0.5\}$ to each component.
 \end{enumerate}
 
-These steps are repeated and after ? generations the winner is selected. The array of the winner is 
-				$\begin{bmatrix}
-				? & ? & ? & ? & ? & ?
-				\end{bmatrix}$
-and the cylinder distance is ??.
+These steps are repeated and after ? generations the winner is selected.
 
-\section{Third Approach} \label{sec:thirdApproach}
+\subsection{Prepare and Hit movement improved} 
 
-The third approach also uses an evolutionary approach to knock the cylinder off the table. In this approach both the prepare and the hit movement are learned. The reset movement is taken from the first approach. The evolutionary algorithm is the same as in the second approach but with a different start array. 
+This approach also uses an evolutionary approach to knock the cylinder off the table. In this approach both the prepare and the hit movement are learned. The reset movement is taken from the hard-coded approach. The evolutionary algorithm is the same as in the previous subsection but with a different start array. 
 
 The start array is a combination of the prepare and the hit movement. It is  created by appending the hit array, given as  
 $\begin{bmatrix}
@@ -175,47 +166,42 @@ $\begin{bmatrix}
 -0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
 \end{bmatrix}$.
 In this approach, the start pool consists of 15 individuals which are generated from the start array by adding random values between $\{-0.25,0.25\}$ to each component. The mating pool consists of three parents.
-The evolutionary algorithm is executed as in the second approach (with the previously described changes), see figure \ref{fig:EA_3}.
-
-\begin{figure}
-	\begin{center}
-		\includegraphics[trim = 1cm 2.3cm 0.5cm 4cm, clip, width=0.4\textwidth]{Presentation1-seiten-7}
-	\end{center}
-	\caption{The evolutionary algorithm used in the third approach to let the robot improve the prepare and hit movements.}
-	\label{fig:EA_3}
-\end{figure}
+The evolutionary algorithm is executed as in the previous approach (with the described changes).
 
 It is repeated for eight generations. 
 
-The array of the winner is 
-				$\begin{bmatrix}
-				? & ? & ? & ? & ? & ? \\ ? & ? & ? & ? & ? & ?
-				\end{bmatrix}$
-and the cylinder distance is ??.
 
-\section{Fourth Approach} \label{sec:fourthApproach}
+\section{Prepare, Grasp, and Throw} \label{sec:Throw}
 
-The fourth approach uses grasp and throw phases to throw the cylinder away from the table. The reset phase is taken from the first approach, the prepare phase from the first approach is adapted, the hit phase is replaced by grasp and throw phases.
+The second approach uses grasp and throw phases to throw the cylinder away from the table. The reset and prepare phases are taken from the first approach and the hit phase is replaced by grasp and throw phases.
+
+\subsection{Hard-coded movements}
+
+At first, the movements are hard-coded.
+
 \begin{itemize}
 \item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
 \item Prepare: Moves the arm next to the cylinder (on the left as seen from the robot arm).
-\item Grasp: Moves the fingers of the robot hand around the cylinder in order to hold it tight.
+\item Grasp: Moves the fingers of the robot hand around the cylinder in order to grab it.
 \item Throw: With high acceleration, the arm moves backwards beyond the vertical position and the hand opens to throw the cylinder away.
 \end{itemize}
 
-These movements are hard-coded.
 
-\section{Fifth Approach} \label{sec:fifthApproach}
+\subsection{Throw movement improved} 
 
 This section describes two different ideas to optimize the throw movement. In both approaches the aim is to let the robot learn which movement is best to throw the cylinder as far away from the table as possible.
 
 \subsection{Evolutionary Approach} \label{subsec:EA}
 
-This approach uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the fourth approach. The throw phase is trained using an evolutionary algorithm. 
+This approach uses the phases from the second approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using an evolutionary algorithm. 
+
 
 \subsection{Markov Chain Monte Carlo Approach} \label{subsec:MCMC}
 
-This approach also uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the fourth approach. The throw phase is trained using a Markov Chain Monte Carlo algorithm. 
+This approach also uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using a Markov Chain Monte Carlo algorithm. 
+
+
+\section{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
 
 {\small
 \bibliographystyle{ieee}
