@@ -1,0 +1,83 @@
+\section{Prepare and Hit} \label{sec:PrepareHit}
+
+The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
+
+\subsection{Hard-coded movements}
+
+At first, the movements are hard-coded:
+
+\begin{itemize}
+\item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
+\item Prepare: Moves the arm in an horizontal position next to the cylinder (on the left side of the cylinder as seen from the robot arm).
+\item Hit: The arm moves towards the cylinder and knocks it off the table.
+\end{itemize}
+
+\subsection{Hit movement improved} 
+
+This approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the hard-coded approach.
+The evolutionary algorithm which is used to let the robot learn the hit movement is described below: 
+
+An individual of each generation consists of an array of six components (genes) that represent the joints of the robot. The start array is defined as $\begin{bmatrix}
+				1 & 1 & 1 & 1 & 1 & 1
+				\end{bmatrix}$.
+To generate the initial population of ten individuals the start array is mutated by adding random values between $\{-0.1,0.1\}$ to each component.
+Computing the next generation consists of three steps:
+\begin{enumerate}
+\item Selection: The mating pool of four parents is created by selecting the individuals with the highest fitness. The fitness is calculated using the difference between the initial and the end position of the cylinder after knocking it off the table.
+
+\item Mating: In this algorithm, the parents are carried over to the next generation. The recombination process uses one-point crossovers. 
+
+\item Mutation: The offspring is mutated by adding a randomly calculated value between $\{-0.5,0.5\}$ to each component.
+\end{enumerate}
+
+These steps are repeated and after ? generations the winner is selected.
+
+\subsection{Prepare and Hit movement improved} 
+
+This approach also uses an evolutionary approach to knock the cylinder off the table. In this approach both the prepare and the hit movement are learned. The reset movement is taken from the hard-coded approach. The evolutionary algorithm is the same as in the previous subsection but with a different start array. 
+
+The start array is a combination of the prepare and the hit movement. It is  created by appending the hit array, given as  
+$\begin{bmatrix}
+-0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
+\end{bmatrix}$ 
+to the prepare array, also given as
+$\begin{bmatrix}
+-0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
+\end{bmatrix}$.
+In this approach, the start pool consists of 15 individuals which are generated from the start array by adding random values between $\{-0.25,0.25\}$ to each component. The mating pool consists of three parents.
+The evolutionary algorithm is executed as in the previous approach (with the described changes).
+
+It is repeated for eight generations. 
+
+
+\section{Prepare, Grasp, and Throw} \label{sec:Throw}
+
+The second approach uses grasp and throw phases to throw the cylinder away from the table. The reset and prepare phases are taken from the first approach and the hit phase is replaced by grasp and throw phases.
+
+\subsection{Hard-coded movements}
+
+At first, the movements are hard-coded.
+
+\begin{itemize}
+\item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
+\item Prepare: Moves the arm next to the cylinder (on the left as seen from the robot arm).
+\item Grasp: Moves the fingers of the robot hand around the cylinder in order to grab it.
+\item Throw: With high acceleration, the arm moves backwards beyond the vertical position and the hand opens to throw the cylinder away.
+\end{itemize}
+
+
+\subsection{Throw movement improved} 
+
+This section describes two different ideas to optimize the throw movement. In both approaches the aim is to let the robot learn which movement is best to throw the cylinder as far away from the table as possible.
+
+\subsection{Evolutionary Approach} \label{subsec:EA}
+
+This approach uses the phases from the second approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using an evolutionary algorithm. 
+
+
+\subsection{Markov Chain Monte Carlo Approach} \label{subsec:MCMC}
+
+This approach also uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using a Markov Chain Monte Carlo algorithm. 
+
+
+\section{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
