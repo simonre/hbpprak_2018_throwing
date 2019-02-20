@@ -1,6 +1,23 @@
 \section{Prepare and Hit} \label{sec:PrepareHit}
 
 The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
+Figure \ref{fig:RPH} shows the sequence of the three states.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+			\node[initial,state,minimum size=1.6cm] (Reset)   								{$Reset$};
+			\node[state,minimum size=1.6cm]         (Prepare)	[right=1cm of Reset] 		{$Prepare$};
+			\node[state,minimum size=1.6cm]         (Hit)	  	[right=1cm of Prepare]		{$Hit$};
+
+			\path[->]	(Reset)		edge	node 				{} (Prepare)
+						(Prepare)	edge	node				{} (Hit)
+						(Hit)		edge	[bend left=45] node {} (Reset);
+		\end{tikzpicture}
+	\end{center}
+	\caption{The three states reset, prepare, and hit are used to let the robot arm hit the cylinder away from the table.}
+	\label{fig:RPH}
+\end{figure}
 
 \subsection{Hard-coded movements}
 
@@ -53,6 +70,26 @@ It is repeated for eight generations.
 \section{Prepare, Grasp, and Throw} \label{sec:Throw}
 
 The second approach uses grasp and throw phases to throw the cylinder away from the table. The reset and prepare phases are taken from the first approach and the hit phase is replaced by grasp and throw phases.
+Figure \ref{fig:RPGT} shows the sequence of the four phases.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+			\node[initial,state,minimum size=1.6cm] (Reset)									{$Reset$};
+			\node[state,minimum size=1.6cm]         (Prepare) 	[right=1cm of Reset]		{$Prepare$};
+			\node[state,minimum size=1.6cm]         (Grasp) 	[right=1cm of Prepare]		{$Grasp$};
+			\node[state,minimum size=1.6cm]         (Throw) 	at (2.65,-2)				{$Throw$};
+
+			\path[->]	(Reset)		edge	node {} (Prepare)
+						(Prepare)	edge	node {} (Grasp)
+						(Grasp)		edge	node {} (Throw)
+						(Throw)		edge	node {} (Reset);
+
+		\end{tikzpicture}
+	\end{center}
+	\caption{The four states reset, prepare, grasp, and throw are used to let the robot arm throw the cylinder away from the table.}
+	\label{fig:RPGT}
+\end{figure}
 
 \subsection{Hard-coded movements}
 
@@ -81,3 +118,26 @@ This approach also uses the phases from the fourth approach. The reset, prepare,
 
 
 \section{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
+
+Figure \ref{fig:RPGWT} shows the state sequence using an additional windup phase.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+			\node[initial,state,minimum size=1.6cm] (Reset)								{$Reset$};
+			\node[state,minimum size=1.6cm]         (Prepare) 	[right=1cm of Reset]	{$Prepare$};
+			\node[state,minimum size=1.6cm]         (Grasp) 	[right=1cm of Prepare]	{$Grasp$};
+			\node[state,minimum size=1.6cm]         (Windup) 	at (4,-2) 				{$Windup$};
+			\node[state,minimum size=1.6cm]         (Throw) 	at (1.3,-2)				{$Throw$};
+
+			\path[->]	(Reset)		edge	node {} (Prepare)
+						(Prepare)	edge	node {} (Grasp)
+						(Grasp)		edge	node {} (Windup)
+						(Windup)	edge	node {} (Throw)
+						(Throw)		edge	node {} (Reset);
+
+		\end{tikzpicture}
+	\end{center}
+	\caption{reset, prepare, grasp, windup, throw}
+	\label{fig:RPGWT}
+\end{figure}
