@@ -1,4 +1,6 @@
-\section{Prepare and Hit} \label{sec:PrepareHit}
+\section{Implementation}
+
+\subsection{Prepare and Hit} \label{sec:PrepareHit}
 
 The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
 Figure \ref{fig:RPH} shows the sequence of the three states.
@@ -19,7 +21,7 @@ Figure \ref{fig:RPH} shows the sequence of the three states.
 	\label{fig:RPH}
 \end{figure}
 
-\subsection{Hard-coded movements}
+\subsubsection{Hard-coded movements}
 
 At first, the movements are hard-coded:
 
@@ -29,7 +31,7 @@ At first, the movements are hard-coded:
 \item Hit: The arm moves towards the cylinder and knocks it off the table.
 \end{itemize}
 
-\subsection{Hit movement improved} 
+\subsubsection{Hit movement improved} 
 
 This approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the hard-coded approach.
 The evolutionary algorithm which is used to let the robot learn the hit movement is described below: 
@@ -49,7 +51,7 @@ Computing the next generation consists of three steps:
 
 These steps are repeated and after ? generations the winner is selected.
 
-\subsection{Prepare and Hit movement improved} 
+\subsubsection{Prepare and Hit movement improved} 
 
 This approach also uses an evolutionary approach to knock the cylinder off the table. In this approach both the prepare and the hit movement are learned. The reset movement is taken from the hard-coded approach. The evolutionary algorithm is the same as in the previous subsection but with a different start array. 
 
@@ -67,7 +69,7 @@ The evolutionary algorithm is executed as in the previous approach (with the des
 It is repeated for eight generations. 
 
 
-\section{Prepare, Grasp, and Throw} \label{sec:Throw}
+\subsection{Prepare, Grasp, and Throw} \label{sec:Throw}
 
 The second approach uses grasp and throw phases to throw the cylinder away from the table. The reset and prepare phases are taken from the first approach and the hit phase is replaced by grasp and throw phases.
 Figure \ref{fig:RPGT} shows the sequence of the four phases.
@@ -91,7 +93,7 @@ Figure \ref{fig:RPGT} shows the sequence of the four phases.
 	\label{fig:RPGT}
 \end{figure}
 
-\subsection{Hard-coded movements}
+\subsubsection{Hard-coded movements}
 
 At first, the movements are hard-coded.
 
@@ -103,11 +105,11 @@ At first, the movements are hard-coded.
 \end{itemize}
 
 
-\subsection{Throw movement improved} 
+\subsubsection{Throw movement improved} 
 
 This section describes two different ideas to optimize the throw movement. In both approaches the aim is to let the robot learn which movement is best to throw the cylinder as far away from the table as possible.
 
-\subsection{Evolutionary Approach} \label{subsec:EA}
+\subsubsection{Evolutionary Approach} \label{subsec:EA}
 
 This approach uses the phases from the second approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using an evolutionary algorithm. 
 
@@ -117,7 +119,7 @@ This approach uses the phases from the second approach. The reset, prepare, and 
 This approach also uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using a Markov Chain Monte Carlo algorithm. 
 
 
-\section{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
+\subsection{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
 
 Figure \ref{fig:RPGWT} shows the state sequence using an additional windup phase.
 

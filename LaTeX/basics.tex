@@ -1,4 +1,6 @@
-\section{Evolutionary Algorithms} \label{sec:EA}
+\section{Basics}
+
+\subsection{Evolutionary Algorithms} \label{sec:EA}
 
 Evolutionary algorithms are population-based metaheuristics \cite{EA}. Metaheuristics are methods for solving optimization problems by iteratively improving candidate solutions in relation to a given quality measure.
 Population-based metaheuristics use populations of multiple solutions and iteratively change populations to find a good solution.
@@ -27,7 +29,7 @@ These steps are being repeated until a new population of individuals is generate
 	\label{fig:EA}
 \end{figure}
 
-\section{Monte Carlo Markov Chain} \label{sec:MCMC}
+\subsection{Monte Carlo Markov Chain} \label{sec:MCMC}
 
 Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is to construct a Markov Chain that generates samples such that more time is spent (more samples are evaluated) in the most interesting regions of the state space (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of posterior densities of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). 
 
