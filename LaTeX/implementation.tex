@@ -1,5 +1,29 @@
 \section{Implementation}
 
+\subsection{Technical details}
+
+Since evolutionary algorithms played a central role in most of the approaches presented in the following sections, a small module was implemented in Python. The module accepts an initial numpy array, clones it and randomly mutates each clone to generate the starting population. It also offers functions to set the fitness of each individual in the last generation and uses these fitness values to generate the next generation when requested. Available parameters are the pool size, the mutation rate and the mating pool size.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+			\node[state,minimum size=1.6cm] (EM)                   {$Genetic\ module$};
+			\node[state,minimum size=1.6cm] (VC) [right=1cm of EM] {$Virtualcoach$};
+			\node[state,minimum size=1.6cm] (NRP)[right=1cm of VC] {$NRP$};
+
+			\path[->]	(EM)  edge	[bend left=45]node 	{movement} (VC)
+						(VC)  edge	[bend left=45] node	{transfer function} (NRP)
+						(NRP) edge	[bend left=45] node {fitness} (VC)
+						(VC)  edge	[bend left=45] node {fitness} (EM);
+		\end{tikzpicture}
+	\end{center}
+	\caption{The interactions between the genetic module, the virtualcoach and the NRP simulation.}
+	\label{fig:virtualcoach}
+\end{figure}
+
+The control of the execution inside the NRP simulation is handled by the \textit{virtualcoach} as seen in Figure \ref{virtualcoach}. For each individual in the latest generation a new transfer function is generated. When the state machine transitions into a new state, this change is published to a ROS topic, triggering the listening transfer function, which sends the corresponding movements to the robot arm. After the simulation, the measured distance of the cylinder is used as the fitness value of the individual and stored in the genetic module. The \textit{virtualcoach} then sets the transfer function for the next individual and restarts the simulation.
+
+
 \subsection{Prepare and Hit} \label{sec:PrepareHit}
 
 The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
