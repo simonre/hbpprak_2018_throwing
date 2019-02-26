@@ -1,6 +1,5 @@
 \section{Conclusion} \label{sec:conclusion}
 
-We presented two algorithms to solve the Praktikum challenge.
-The first approach used an evolutionary algorithm to directly hit the cylinder away or to grasp it and throw it away from the table. During learning, the arm movement changed siginificantly with each generation.
-In contrast, the arm movement in the Monte Carlo Markov Chain approach quickly found an optimal movement, which was then improved only slightly.
-Both approaches have in common that they achieve good results after just a few iterations, so the decision to renounce neural networks was good because they would probably need more iterations to achive an effective result.
+We presented several approaches to solve the problem.
+The evolutionary algorithm yielded satisfying results. However, the movements were not realistic and probably impossible to execute in the real world. On the other hand, the MCMC approach was severely limited by not being able to recover well from one-time glitches in the physics simulation.
+Although a neural-network-based approach would certainly be interesting, we decided to test out alternative approaches because of the platform limitations.
