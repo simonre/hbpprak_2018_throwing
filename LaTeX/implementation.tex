@@ -135,20 +135,17 @@ As in \ref{sec:prepare_hit_hard}, the first attempt was to hard code the movemen
 \subsubsection{Learning the Throw movement} \label{subsec:EA}
 
 In this approach, the robot learns to improve the \textit{Throw} movement. For this, the same evolutionary method as in \ref{sec:PrepareHit} was used.
-\todo{parameters?}
 
 The results were unexpected, but logical. The robot arm learned to spin extremely fast around its base, propelling the cylinder far over the edge of the scene. While probably not good for the mechanical components of the robot in the real world, this development certainly makes sense inside the simulation.
 
 
 \subsection{Markov Chain Monte Carlo Approach} \label{subsec:MCMC}
 
-\todo{}
-This approach also uses the phases from the fourth approach. The \textit{Reset}, \textit{Prepare}, and \textit{Grasp} are still hard-coded as in the second approach. The \textit{Throw} phase is trained using a Markov Chain Monte Carlo (MCMC) inspired algorithm as described in \todo{\ref{}reference to 3.2}. This approach yielded different results from the evolutionary approach. While the evolutionary approach learned very robust throwing techniques after a while, the MCMC approach honed in on exploiting good strategies much faster. This also led to the approach actually being able to identify and exploit glitches in the simulation quite reliably. Though it would be interesting to see this approach in a real world scenario, it did not work very well inside the NRP.
+This approach also uses the phases from the fourth approach. The \textit{Reset}, \textit{Prepare}, and \textit{Grasp} are still hard-coded as in the second approach. The \textit{Throw} phase is trained using a Markov Chain Monte Carlo (MCMC) inspired algorithm as described in \ref{sec:MCMC}. This approach yielded different results from the evolutionary approach. While the evolutionary approach learned very robust throwing techniques after a while, the MCMC approach honed in on exploiting good strategies much faster. This also led to the approach actually being able to identify and exploit glitches in the simulation quite reliably. Though it would be interesting to see this approach in a real world scenario, it did not work very well inside the NRP.
 
 
 \subsection{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
 
-\todo{}
 An even more human movement is to wind up the throw before executing it to generate even more momentum. Therefore we added an additional \textit{Windup} phase, shown in Figure \ref{fig:RPGWT}.
 
 \begin{figure}
