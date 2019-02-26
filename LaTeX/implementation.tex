@@ -1,5 +1,39 @@
 \section{Implementation}
 
+\subsection{Technical details}
+
+Since evolutionary algorithms played a central role in most of the approaches presented in the following sections, a small module was implemented in Python. The module accepts an initial \textit{numpy} array, clones it and randomly mutates each clone to generate the starting population. It also offers functions to set the fitness of each individual in the last generation and uses these fitness values to generate the next generation when requested. Available parameters are the pool size, the mutation rate and the mating pool size.
+
+\begin{figure}
+	\begin{center}
+		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
+			\node[rectangle,draw,minimum size=1cm] (EM)                   {$Genetic\ module$};
+			\node[rectangle,draw,minimum size=1cm] (VC) [right=1cm of EM] {$Virtualcoach$};
+			\node[rectangle,draw,minimum size=1cm] (NRP)[right=1cm of VC] {$NRP$};
+
+			\path[->]	(EM)  edge	[bend left=45] node {movement} (VC)
+						(VC)  edge	[bend left=45] node	{transfer function} (NRP)
+						(NRP) edge	[bend left=45] node {fitness} (VC)
+						(VC)  edge	[bend left=45] node {fitness} (EM);
+		\end{tikzpicture}
+	\end{center}
+	\caption{The interactions between the genetic module, the virtualcoach and the NRP simulation.}
+	\label{fig:virtualcoach}
+\end{figure}
+
+The control of the execution inside the NRP simulation is managed by the \textit{virtualcoach} as seen in Figure \ref{virtualcoach}. The simulation runs in a continuous loop, repeating the same movements according to the state machine defined in each approach. \todo{Describe better:} To synchronize with the virtualcoach, the simulation will publish status updates that carry information about the current simulation state.This allows the virtualcoach to pause the simulation after the simulation has run once, extract th encessary information, update the transfer functions and resume the execution.
+
+The tasks carried out during the learning process are the following:
+\begin{enumerate}
+\item For each individual in the latest generation a new transfer function is generated. When the state machine transitions into a new state, this change is published to a ROS topic, the listening transfer function, which sends the corresponding joint forces to the robot arm.
+\item The simulation runs the requested robot arm movements.
+\item The simulation registers the new position of the cylinder and calculates the traveled distance.
+\item The virtualcoach detects that the simulation is restarting, pauses it, reads out the traveled distance of the cylinder and sets it as the fitness of this individual. It then proceeds to update the trasnfer function to simulate the next individual and resumes the simulation.
+\end{enumerate}
+
+This process continues until the required number of generations have been simulated. The winning movement is the fittest of the last generation.
+
+
 \subsection{Prepare and Hit} \label{sec:PrepareHit}
 
 The first approach is to let the robot arm hit the cylinder away from the table. Therefore, the movement is divided into three phases: reset, prepare, and hit. The phases are implemented as states using the state machine editor.
@@ -21,57 +55,64 @@ Figure \ref{fig:RPH} shows the sequence of the three states.
 	\label{fig:RPH}
 \end{figure}
 
-\subsubsection{Hard-coded movements}
+\subsubsection{Hard-coded movements} \label{sec:prepare_hit_hard}
 
-At first, the movements are hard-coded:
+To get a feeling of how the robot arm could hit the cylinder, the first attempt involved hard-coding the movements. In each state, the following actions should be simulated:
 
 \begin{itemize}
-\item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
-\item Prepare: Moves the arm in an horizontal position next to the cylinder (on the left side of the cylinder as seen from the robot arm).
+\item Reset: Move the arm in an upright position and reset the cylinder position on the table.
+\item Prepare: Move the arm to a horizontal position, the hands ends up next to the cylinder.
 \item Hit: The arm moves towards the cylinder and knocks it off the table.
 \end{itemize}
 
-\subsubsection{Hit movement improved} 
+\todo{The resulting movements was
+$\begin{bmatrix}
+1 & 1 & 1 & 1 & 1 & 1
+\end{bmatrix}$ ???}
 
-This approach also has the aim of knocking the cylinder off the table, however, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the hard-coded approach.
-The evolutionary algorithm which is used to let the robot learn the hit movement is described below: 
+\subsubsection{Learning the Hit movement} \label{sec:prepare_hit_learn_hit}
 
-An individual of each generation consists of an array of six components (genes) that represent the joints of the robot. The start array is defined as $\begin{bmatrix}
-				1 & 1 & 1 & 1 & 1 & 1
-				\end{bmatrix}$.
-To generate the initial population of ten individuals the start array is mutated by adding random values between $\{-0.1,0.1\}$ to each component.
-Computing the next generation consists of three steps:
-\begin{enumerate}
-\item Selection: The mating pool of four parents is created by selecting the individuals with the highest fitness. The fitness is calculated using the difference between the initial and the end position of the cylinder after knocking it off the table.
+In this next approach, the hit movement is not hard-coded but learned using an evolutionary algorithm. The reset and prepare phases are taken from the hard-coded approach \ref{sec:prepare_hit_hard}. An individual consists of an array of six components that represent the force to apply to each joint of the robot. The start array used was the movement acquired from the hard-coded approach in \ref{sec:prepare_hit_hard}.
 
-\item Mating: In this algorithm, the parents are carried over to the next generation. The recombination process uses one-point crossovers. 
+The parameters used for the evolutionary learning are described in the following: 
 
-\item Mutation: The offspring is mutated by adding a randomly calculated value between $\{-0.5,0.5\}$ to each component.
-\end{enumerate}
+\begin{itemize}
+\item \textbf{Pool size:} The pool size was fixed at \textbf{15} individuals in each generation. \todo{Describe that more would not be feasible?}
+\item \textbf{Mutation rate:} To leave more space to early exploration without restricting the possible variations of the initial movement, a relatively high mutation rate of \todo{\textbf{5}} was first selected, but is decreased by \todo{\textbf{20\%}} in each new generation to allow for more fine-tuning later on. This initial mutation rate is also applied to mutate the first generation that is created from the start vector.
+\item \textbf{Mating pool size:} The mating pool size was \todo{\textbf{4}}. These 4 fittest individuals are also carried on to the next generation, giving the algorithm a chance to recover even if the offspring was exceptionally bad at the task or a glitch in the simulation resulted in an extremely high fitness.
+\item \textbf{Crossover:} One-point-crossover was used to combine the fittest individuals to produce the next generation.
+\end{itemize}
 
-These steps are repeated and after ? generations the winner is selected.
+The number of simulated generations was \textbf{6}, after which the robot arm was able o not just knock the cylinder from the table, but hit it significantly further away.
 
-\subsubsection{Prepare and Hit movement improved} 
 
-This approach also uses an evolutionary approach to knock the cylinder off the table. In this approach both the prepare and the hit movement are learned. The reset movement is taken from the hard-coded approach. The evolutionary algorithm is the same as in the previous subsection but with a different start array. 
+\subsubsection{Learning the Prepare and Hit movements} 
 
-The start array is a combination of the prepare and the hit movement. It is  created by appending the hit array, given as  
+On top of the approach described in \ref{sec:prepare_hit_learn_hit}, this approach attempts to also learn an improved version of the prepare movement. The intuition was that a preparation movement that begins the swing from a greater distance from the cylinder would result in more momentum and therefore a stronger hit.
+The robot joint force vectors corresponding to the prepare and hit movements are simply concatenated, resulting in gene of 12 elements.
+\todo{Include values?
 $\begin{bmatrix}
 -0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
 \end{bmatrix}$ 
 to the prepare array, also given as
 $\begin{bmatrix}
 -0.45 &  -0.9 & 0.9 & 0 & 0 & -0.5
-\end{bmatrix}$.
-In this approach, the start pool consists of 15 individuals which are generated from the start array by adding random values between $\{-0.25,0.25\}$ to each component. The mating pool consists of three parents.
-The evolutionary algorithm is executed as in the previous approach (with the described changes).
+\end{bmatrix}$.}
 
-It is repeated for eight generations. 
+\begin{itemize}
+\item \textbf{Pool size:} As in \ref{sec:prepare_hit_learn_hit}, the pool size was \textbf{15}. \todo{Describe that more would not be feasible?}
+\item \textbf{Mutation rate:} As in \ref{sec:prepare_hit_learn_hit}, the mutation rate was \todo{\textbf{5}}.
+\item \textbf{Mating pool size:} As in \ref{sec:prepare_hit_learn_hit}, the mating pool size was \todo{\textbf{4}}. These 4 fittest individuals were still carried on to the next generation.
+\item \textbf{Crossover:} Sinve the first half of the gene is now exclusive to the prepare movement and the second helf to the hit movement, performing a one-point-crossover at the center would not be appropriate. Therefore, n-point-crossover was used, where for each component of the offspring vector there is a 50\% likelihood to inherit the value from the second parent instead of the first.
+\end{itemize}
+
+After 6 generations, the fittest simulated prepare movement started the swing further away from the cylinder than the previous hardcoded versions. However, the improvement was less than expected, possibly because the chance of getting good both a good prepare movement and a good hit movement simultaneously during the mutation is very low. Also, what might be a good prepare movement in combination with one specific hit action might lead to drastically different results when paired with a different hit motion.
 
 
 \subsection{Prepare, Grasp, and Throw} \label{sec:Throw}
 
-The second approach uses grasp and throw phases to throw the cylinder away from the table. The reset and prepare phases are taken from the first approach and the hit phase is replaced by grasp and throw phases.
+The second approach attempts to mimic humans by first grasping the cylinder and then throwing it.
+The reset and prepare phases remain the same as in \ref{sec:PrepareHit}, only the hit phase is replaced by the grasp and throw phases.
 Figure \ref{fig:RPGT} shows the sequence of the four phases.
 
 \begin{figure}
@@ -95,32 +136,32 @@ Figure \ref{fig:RPGT} shows the sequence of the four phases.
 
 \subsubsection{Hard-coded movements}
 
-At first, the movements are hard-coded.
+As in \ref{sec:prepare_hit_hard}, the first attempt was to hard code the movements. In the two new states, the robot arm should:
 
 \begin{itemize}
-\item Reset: Moves the arm in an upright position and puts the cylinder on the top right corner of the table (as seen from the robot arm).
-\item Prepare: Moves the arm next to the cylinder (on the left as seen from the robot arm).
-\item Grasp: Moves the fingers of the robot hand around the cylinder in order to grab it.
-\item Throw: With high acceleration, the arm moves backwards beyond the vertical position and the hand opens to throw the cylinder away.
+\item Grasp: Close the fingers of the robot hand around the cylinder, grabbing it.
+\item Throw: With high acceleration, move backwards beyond the vertical position and the open the hand to release the cylinder and throw it away.
 \end{itemize}
 
+\todo{Describe non-deterministic grabbing?}
 
-\subsubsection{Throw movement improved} 
+\subsubsection{Learning the Throw movement} \label{subsec:EA}
 
-This section describes two different ideas to optimize the throw movement. In both approaches the aim is to let the robot learn which movement is best to throw the cylinder as far away from the table as possible.
+In this approach, the robot should learn to improve the throw movement. For this, the same evolutionary method as in \ref{sec:PrepareHit} was used.
+\todo{parameters?}
 
-\subsubsection{Evolutionary Approach} \label{subsec:EA}
-
-This approach uses the phases from the second approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using an evolutionary algorithm. 
+The results were fascinating, but logical. The robot arm learned to spin extremely fast around it's base, propelling the cylinder far over the edge of the scenario. While not good for the mechanical components of the robot in the real world, this development made certainly sense inside the simulation.
 
 
 \subsection{Markov Chain Monte Carlo Approach} \label{subsec:MCMC}
 
+\todo{}
 This approach also uses the phases from the fourth approach. The reset, prepare, and grasp are still hard-coded as in the second approach. The throw phase is trained using a Markov Chain Monte Carlo algorithm. 
 
 
 \subsection{Prepare, Grasp, Windup, and Throw} \label{sec:Windup}
 
+\todo{}
 Figure \ref{fig:RPGWT} shows the state sequence using an additional windup phase.
 
 \begin{figure}
