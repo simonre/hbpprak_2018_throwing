@@ -14,8 +14,8 @@ In general, evolutionary algorithms consist of the following steps \cite{EA}:
 \item Evolutionary process: The individuals are evaluated by calculating their fitness. Therefore a fitness function is needed.
 According to their fitness, some of the individuals are selected to be the parents of the following generation.
 Then a process with reproduction, recombination, and mutation starts - similar to biological processes.
-The parents are being recombinated and the resulting individuals are mutated to form the offspring of the current generation.
-These steps are being repeated until a new population of individuals is generated. The parents are also added to the new population. This new population substitutes the old population and the process is repeated until an abort criterion is fulfilled  (see figure \ref{fig:EA}).
+The parents are recombined and the resulting individuals are mutated to form the offspring of the current generation.
+These steps are repeated until a new population of individuals is generated. The parents are also added to the new population. This new population substitutes the old population and the process is repeated until an abort criterion is fulfilled  (see figure \ref{fig:EA}).
 
 \item The best individual is selected.
 \end{enumerate}
@@ -29,20 +29,11 @@ These steps are being repeated until a new population of individuals is generate
 	\label{fig:EA}
 \end{figure}
 
-This approach brings with it a further question to ask. The exploitation vs exploration problem here can also be found in the number of generations vs the number of offspring per generation. A large number of offspring means a larger explorative phase, a higher number of generations a higher amount of exploitation.
+The exploitation vs exploration trade-off here can also be found in the trade-off between the number of generations and the number of offspring per generation. A large number of offspring means a larger exploratory phase, a higher number of generations would lead to a higher degree of exploitation.
 
 \subsection{Monte Carlo Markov Chain} \label{sec:MCMC}
 
-Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is similar to that of a greedy hillclimbing algorithm, with the added possibility of not only making forward (or "upward") steps, but also probabilistically accepting downhill steps. This is useful for getting over smaller local minima (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of fitnesses of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). In our approach, the probability of accepting a move was (fitness of current movement)/(fitness of last movement). If the fitness of the current movement is greater, the current movement is always accepted, smaller "downhill" steps are often accepted and larger "downhill" steps are very rarely accepted. The idea of this approach is geared towards quickly making progress towards a "good" movement (a movement with a large fitness function) without needing many samples. This approach rests on the assumption that the fitness function is at least somewhat of a hill i.e. somewhat steadily climbing.
-
-
-\begin{figure}
-	\begin{center}
-		\includegraphics[trim = 0cm 1.5cm 1cm 5.4cm, clip, width=0.4\textwidth]{lecture12-seiten-46}
-	\end{center}
-	\caption{The probability to evaluate or find a sample in an area with high posterior probability is proportional to the posterior distribution, from \cite{MCMC}}
-	\label{fig:MCMC1}
-\end{figure}
+Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is similar to that of a greedy hillclimbing algorithm, with the added possibility of not only making forward (or "upward") steps, but also probabilistically accepting downhill steps. This is useful for getting over smaller local minima (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of fitnesses of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). In our approach, the probability of accepting a move was $$\frac{fitness\ of\ current\ movement}{fitness\ of\ last\ movement}$$. If the fitness of the current movement is greater, the current movement is always accepted, smaller "downhill" steps are often accepted and larger "downhill" steps are very rarely accepted. The idea of this approach is geared towards quickly making progress towards a "good" movement (a movement with a large fitness function), without needing many samples. This approach rests on the assumption that the fitness function is at least somewhat of a hill i.e. somewhat steadily rising.
 
 \begin{figure}
 	\begin{center}
