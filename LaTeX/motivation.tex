@@ -1,12 +1,14 @@
 \section{Motivation} \label{sec:motivation}
 
-There are some problems that any solution to a problem like this should answer. One typical problem in reinforcement learning problems is the tradeoff between exploration and exploitation. In this particular problem, this tradeoff manifests itself in the tradeoff between continuing to explore random movements and exploiting movements that the reward function has deemed as good movements. 
+There are some questions that any solution to a problem like this should answer. One typical question in reinforcement learning problems is the tradeoff between exploration and exploitation. In this particular problem, this tradeoff manifests itself in the tradeoff between continuing to explore random movements and exploiting movements that the reward function has deemed as good movements. This could be controlled via the learning rate
+
 Another problem we quickly ran into with this task was that executing the movements took a very long time which limited the number of samples we could get from the simulation and therefore the learning mechanism we chose had to be quick and efficient. 
+
 In summary, these questions had to be answered by every approach to this problem:
 
 \begin{itemize}
 	\item What is an appropriate learning rate?: As we soon discovered, a learning rate that was too high led to unpredictable movements of the robot and steered the robot arm away from movements that would actually be good, whereas a learning rate that was too small would not produce any result as the arm would not get enough training.
 	\item What is a good algorithm choice?: We needed an algorithm that is both robust to some outliers as well as being reasonably fast.
-	\item How will the callback work?: As outlined in the initial paragraph, the platform would call back to our alforithm after a particular movement finishes. A problem we ran into here was that there did not seem to be a way to reliably restart the platform without crashing it which is why we needed a solution for this.
+	\item How will the callback work?: As outlined in the initial paragraph, the platform would call back to our algorithm after a particular movement finishes. A problem we ran into here was that there did not seem to be a way to reliably restart the platform without crashing it which is why we needed a solution for this.
 \end{itemize}
 
