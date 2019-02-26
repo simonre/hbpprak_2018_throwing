@@ -29,9 +29,11 @@ These steps are being repeated until a new population of individuals is generate
 	\label{fig:EA}
 \end{figure}
 
+This approach brings with it a further question to ask. The exploitation vs exploration problem here can also be found in the number of generations vs the number of offspring per generation. A large number of offspring means a larger explorative phase, a higher number of generations a higher amount of exploitation.
+
 \subsection{Monte Carlo Markov Chain} \label{sec:MCMC}
 
-Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is to construct a Markov Chain that generates samples such that more time is spent (more samples are evaluated) in the most interesting regions of the state space (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of posterior densities of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). 
+Monte Carlo Markov Chain algorithms can be used for hard optimization problems. The idea is similar to that of a greedy hillclimbing algorithm, with the added possibility of not only making forward (or "upward") steps, but also probabilistically accepting downhill steps. This is useful for getting over smaller local minima (see figure \ref{fig:MCMC1}) \cite{MCMC}. The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of fitnesses of the two points: uphill steps are always accepted, small downhill steps are usually accepted but huge downhill steps are almost never accepted (see figure \ref{fig:MCMC2}). In our approach, the probability of accepting a move was (fitness of current movement)/(fitness of last movement). If the fitness of the current movement is greater, the current movement is always accepted, smaller "downhill" steps are often accepted and larger "downhill" steps are very rarely accepted. The idea of this approach is geared towards quickly making progress towards a "good" movement (a movement with a large fitness function) without needing many samples. This approach rests on the assumption that the fitness function is at least somewhat of a hill i.e. somewhat steadily climbing.
 
 
 \begin{figure}
@@ -46,6 +48,6 @@ Monte Carlo Markov Chain algorithms can be used for hard optimization problems. 
 	\begin{center}
 		\includegraphics[trim = 0cm 4cm 1cm 7cm, clip, width=0.4\textwidth]{lecture12-seiten-48}
 	\end{center}
-	\caption{The decision to accept or reject a proposal to go from Point 1 to Point 2 is based on the ratio of posterior densities of the two points/samples, from \cite{MCMC}}
+	\caption{The decision to accept or reject a movement to go from Point 1 to Point 2 is based on the ratio of fitness functions of the two movements, from \cite{MCMC}}
 	\label{fig:MCMC2}
 \end{figure}
