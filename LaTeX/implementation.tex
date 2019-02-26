@@ -2,16 +2,16 @@
 
 \subsection{Technical details}
 
-Since evolutionary algorithms played a central role in most of the approaches presented in the following sections, a small module was implemented in Python. The module accepts an initial numpy array, clones it and randomly mutates each clone to generate the starting population. It also offers functions to set the fitness of each individual in the last generation and uses these fitness values to generate the next generation when requested. Available parameters are the pool size, the mutation rate and the mating pool size.
+Since evolutionary algorithms played a central role in most of the approaches presented in the following sections, a small module was implemented in Python. The module accepts an initial \textit{numpy} array, clones it and randomly mutates each clone to generate the starting population. It also offers functions to set the fitness of each individual in the last generation and uses these fitness values to generate the next generation when requested. Available parameters are the pool size, the mutation rate and the mating pool size.
 
 \begin{figure}
 	\begin{center}
 		\begin{tikzpicture}[>=stealth',shorten >=1pt,auto]
-			\node[state,minimum size=1.6cm] (EM)                   {$Genetic\ module$};
-			\node[state,minimum size=1.6cm] (VC) [right=1cm of EM] {$Virtualcoach$};
-			\node[state,minimum size=1.6cm] (NRP)[right=1cm of VC] {$NRP$};
+			\node[rectangle,draw,minimum size=1cm] (EM)                   {$Genetic\ module$};
+			\node[rectangle,draw,minimum size=1cm] (VC) [right=1cm of EM] {$Virtualcoach$};
+			\node[rectangle,draw,minimum size=1cm] (NRP)[right=1cm of VC] {$NRP$};
 
-			\path[->]	(EM)  edge	[bend left=45]node 	{movement} (VC)
+			\path[->]	(EM)  edge	[bend left=45] node {movement} (VC)
 						(VC)  edge	[bend left=45] node	{transfer function} (NRP)
 						(NRP) edge	[bend left=45] node {fitness} (VC)
 						(VC)  edge	[bend left=45] node {fitness} (EM);
